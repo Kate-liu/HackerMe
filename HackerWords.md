@@ -37,11 +37,13 @@
 - DoS（Denial of Service，拒绝服务）攻击
 - 对称加密算法
   -  加密和解密使用的是同一个密钥
+  -  高效
   -  DES、IDEA、AES、国密 SM1 和 SM4
 - 非对称加密算法
   - 加密和解密使用不同的密钥，公钥和私钥
   - 正向计算很容易，反向推倒则无解
   - 解决密钥分发的问题
+  - 但是效率不高
   - RSA、ECC 和国密 SM2
 - 散列算法
   - 对任意长度的输入，计算出一个定长的 id
@@ -52,6 +54,19 @@
     - SHA-2 256 是目前比较安全的散列算法
   - 加”盐“
     - 一串随机的字符，是可以公开的
+- 单点登录（Single Sign On，SSO）
+  - CAS（Central Authentication Service，集中式认证服务）流程
+  - JWT（JSON Web Token）
+  - OAuth（Open Authorization）
+  - OpenID（Open Identity Document）
+- 访问控制机制
+  - DAC、role-BAC、ruleBAC、MAC
+  - DAC（Discretionary Access Control，自主访问控制）
+  - role-BAC（role Based Access Control，基于角色的访问控制）
+  - rule-BAC（rule Based Access Control，基于规则的访问控制）
+  - MAC（Mandatory Access Control，强制访问控制）
+- 威胁评估的步骤
+  - 识别数据、识别攻击、识别漏洞
 
 
 
