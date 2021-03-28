@@ -382,6 +382,122 @@
 
 ### Web 安全溯源 
 
+#### Web安全的起源 
+
+- Web应用全部都是建立在HTTP协议基础上，是对HTTP协议的实际应用。
+- Web应用在实现HTTP协议的过程中，没有做足够充足强大的约束，导致攻击者能够利用其中的薄弱环节进行攻击。 
+
+![1616895500534](HackerMeWeb.assets/1616895500534.png)
+
+
+
+#### Web安全攻防要点 
+
+![1616895805998](HackerMeWeb.assets/1616895805998.png)
+
+#### Web 安全的本质是什么 
+
+- 应用问题？
+- 协议问题？
+- 都不是！！！
+
+
+
+#### 安全溯源 
+
+- 信任问题
+  - 前端输入不可信
+- Web安全根本在于，Web应用在实现HTTP协议的过程中，没有做足够充足强大的约束，导致攻击者能够利用其中的薄弱环节进行攻击。 
+
+
+
+### Web渗透工具 
+
+#### Burp Suite 
+
+- Burp Suite是用于攻击Web应用程序的集成平台框架。 它包含了许多Web安全相关工具， 也同时设计了接口，满足了安全人员自行拓展程序功能的需求。 
+- Burp功能
+  - Proxy——是一个拦截HTTP/S的代理服务器，作为一个在浏览器和目标应用程序之间的中间人，允许你拦截，查看，修改在两个方向上的原始数据流。
+  - Intruder——是一个定制的高度可配置的工具，对web应用程序进行自动化攻击，如：枚举标识符，收集有用的数据，以及使用fuzzing 技术探测常规漏洞。
+  - Repeater——是一个靠手动操作来补发单独的HTTP 请求，并分析应用程序响应的工具。
+  - Sequencer——是一个用来分析那些不可预知的应用程序会话令牌和重要数据项的随机性的工具。
+  - Decoder——是一个进行手动执行或对应用程序数据者智能解码编码的工具。
+  - Comparer——是一个实用的工具，通常是通过一些相关的请求和响应得到两项数据的一个可视化的“差异”。 
+- 下载安装
+  - https://portswigger.net/burp/communitydownload
+- 设置代理 
+  - Proxy -> Intercept -> 关闭 Intercept is on
+  - Proxy -> Options -> 本地 8080端口 
+  - 浏览器：选项 -> 网络设置 -> 手动配置代理 -> HTTP 代理，端口
+- 设置代理 - Mac 
+  - 系统偏好设置 -> 网络 -> 高级 -> 代理 -> 网页代理（HTTP）
+- 代理 - Windows 
+  - 网络代理管理 -> 使用代理服务器
+
+
+
+#### curl 
+
+- curl 是一个功能强大灵活的网络工具，使用url的形式传输数据， 支持 HTTPS，IMAP，POP3，RTSP，SCP，FTP， FTPS，TFTP， SMTP以及SMB， Telnet等协议。
+- 多用于用在抓取网页、网络监控等方面的开发，解决开发中遇到的问题。 
+- Mac 自带
+- windows 安装
+  - https://curl.se/download.html
+  - 将解压路径添加至环境变量
+- 命令：
+  - curl www.baidu.com
+  - curl www.baidu.com -I
+  - man curl
+  - curl -h
+  - curl ifconfig.co
+  - curl ifconfig.co -v
+- curl 使用场景小览 
+  - -A参数指定客户端的用户代理标头，即User-Agent。
+  - -b参数用来向服务器发送 Cookie。
+  - -c参数将服务器设置的 Cookie 写入一个文件。
+  - -d参数用于发送 POST 请求的数据体。
+  - -e参数用来设置 HTTP 的标头Referer，表示请求的来源。 
+  - -F参数用来向服务器上传二进制文件。
+  - -G参数用来构造 URL 的查询字符串。
+  - -H参数添加 HTTP 请求的标头。 
+
+
+
+#### Postman 
+
+- Postman是一款功能强大的网页调试与发送网页HTTP请求的工具
+- 不仅可以调试简单的CSS、HTML、脚本等简单的网页基本信息，它还可以发送几乎所有类型的HTTP请求
+- 可视化版本的curl
+- 使用非常傻瓜，所见即所得
+- 下载安装
+  - https://www.postman.com/downloads/
+
+
+
+#### HackBar 
+
+- Firefox 浏览器插件，包含一些常用的工具。(SQL injection,XSS,加密等)，可以利用它，快速构建一个HTTP请求，或者用它快速实现某种算法等，多用于手工测试Web漏洞。 
+- 安装
+  - Firefox 浏览器 -> 附加组件 -> 寻找更多组件Wappalyzer -> 添加组件
+
+
+
+#### Wappalyzer 
+
+- Wappalyzer是一款功能强大的、且非常实用的网站技术分析插件，通过该插件能够分析目标网站所采用的平台构架、网站环境、服务器配置环境、JavaScript框架、编程语言等参数。
+- 官网：https://www.wappalyzer.com/ 
+- 支持平台：Firefox，Edge，Chrome
+- 安装
+  - 插件管理直接安装
+
+
+
+
+
+
+
+
+
 
 
 
