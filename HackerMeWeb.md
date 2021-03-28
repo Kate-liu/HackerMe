@@ -237,6 +237,163 @@
 
 #### Python建站 
 
+- 什么是Django 
+
+  - Django是一个开放源代码的Web应用框架，由Python写成。
+  - 采用了MTV的框架模式，即模型M（Model），视图V（View）和模版T（Template）。
+  - 它最初是被开发来用于管理劳伦斯出版集团旗下的一些以新闻内容为主的网站的，即CMS（内容管理系统）软件。并于2005年7月在BSD许可证下发布。 
+
+- 创建第一个项目 
+
+  - 安装Django环境
+    - Python –m pip install django
+  - 创建第一个项目
+    - django-admin startproject mysite
+  - 命令行命令
+    - ls -l
+    - dir
+    - tree ./
+    - cd mysite/
+  - 启动
+    - python manage.py runserver 0.0.0.0:8000
+
+- 项目文件介绍：
+
+  - manage.py
+    - Django用于管理本项目的命令行工具。
+  - _\_init__.py
+    - 一个普通的包初始化模块。
+  - settings.py
+    - Django项目的配置文件 ， 本项目引用的组件，项目名， 数据库配置， 时间、语言 ，静态文件访问地址和存储路径。
+  - wsgi.py 
+    - Web Server gateway interface
+    - 接口信息用于服务器部署。 
+
+- Django应用注册及建立 
+
+  - django-admin startapp firstapp 
+
+  - 注册 app，添加 template 路径，开放外部主机访问权限
+
+    - mysite/settings.py
+
+      - ```python
+        ALLOWED_HOSTS = ['*']  # 允许外部主机访问
+        
+        INSTALLED_APPS = [
+            'django.contrib.admin',
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
+            'django.contrib.sessions',
+            'django.contrib.messages',
+            'django.contrib.staticfiles',
+            'mysite',  # 注册 mysite
+        ]
+        
+        TEMPLATES = [
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'DIRS': [os.path.join(BASE_DIR, 'template')],  # 添加路径模板
+                'APP_DIRS': True,
+                'OPTIONS': {
+                    'context_processors': [
+                        'django.template.context_processors.debug',
+                        'django.template.context_processors.request',
+                        'django.contrib.auth.context_processors.auth',
+                        'django.contrib.messages.context_processors.messages',
+                    ],
+                },
+            },
+        ]
+        ```
+
+  - Django应用添加URL映射关系 
+
+    - firstapp/views.py
+      - 添加函数
+    - mysite/urls.py
+      - 添加路径映射 URL
+    - 启动应用
+      - python manage.py runserver 0.0.0.0:8000
+    - 访问
+      - http://127.0.0.1:8000/helloworld
+
+- 数据库迁移与创建账号 
+
+  - 迁移数据，初始化数据表
+    - python manage.py makemigrations 
+    - python manage.py migrate 
+  - 在mysite 目录下创建 管理员 账号 
+    - python manage.py createsuperuser 
+  - 启动应用
+  - 访问
+    - http://127.0.0.1:8000/admin/
+    - 用户名：root
+    - 密码：root
+
+
+
+### HTTP协议基础 
+
+#### HTTP协议是怎么工作的 
+
+- HTTP协议定义了Web客户端如何从Web服务器请求Web页面，以及服务器如何把Web页面传送给客户端。
+- 客户端连接到Web服务器
+  - 一个HTTP客户端，通常是浏览器，与Web服务器的HTTP端口（默认为80）建立一个TCP套接字连接。
+- 发送HTTP请求
+  - 通过TCP套接字，客户端向Web服务器发送一个文本的请求报文，一个请求报文由请求行、请求头部、空行和请求数据 4部分组成。
+- 服务器接受请求并返回HTTP响应
+  - Web服务器解析请求，定位请求资源。服务器将资源复本写到TCP套接字，由客户端读取。
+  - 一个响应由状态行、响应头部、空行（请求空行）和响应数据（请求体）4部分组成。
+- 释放连接TCP连接
+  - 若connection 模式为close，则服务器主动关闭TCP连接，客户端被动关闭连接，释放TCP连接。
+  - 若connection 模式为keepalive，则该连接会保持一段时间，在该时间内可以继续接收请求。
+- 客户端浏览器解析HTML内容 
+
+
+
+#### HTTP协议 
+
+- 请求方法
+  - GET和POST是最常见的HTTP方法，除此以外还包括DELETE、HEAD、OPTIONS、PUT、TRACE。
+  - 不过，当前的大多数浏览器只支持GET和POST
+- 常见的报文头的属性有很多 
+
+![1616894719841](HackerMeWeb.assets/1616894719841.png)
+
+
+
+#### GET vs POST 
+
+- 从参数的传递方面来看,GET请求的参数是直接拼接在地址栏URL的后面,而POST请求的参数是放到请求体里面的。
+- 从长度限制方面来看,GET请求有具体的长度限制,一般不超过1024KB,而POST理论上没有,但是浏览器一般有个界限。
+- 从安全方面来看,GET请求相较于POST,因为数据都是明文显示在URL上面的,所以安全和私密性不如POST。
+- 从本质上来说，GET和POST都是TCP连接，并无实质的区别。但是由于HTTP/浏览器的限定，导致它们在应用过程中体现出了一些不同。GET产生一个数据包，POST产生两个数据包。对于GET请求，浏览器会把http header 和 data 一并发出去,服务器响应200(返回数据)。而对于POST，浏览器先发送header，服务器响应100 continue，浏览器再发送data，服务器响应200 ok。 
+
+
+
+#### HTTP请求方法和响应代码 
+
+![1616894968238](HackerMeWeb.assets/1616894968238.png)
+
+![1616894988927](HackerMeWeb.assets/1616894988927.png)
+
+
+
+### Web 安全溯源 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
