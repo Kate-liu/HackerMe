@@ -67,6 +67,21 @@
   - MAC（Mandatory Access Control，强制访问控制）
 - 威胁评估的步骤
   - 识别数据、识别攻击、识别漏洞
+- XSS 攻击（Cross-Site Scripting，跨站脚本攻击）
+  - 反射型 XSS
+    - 产生在前后端一体的网页应用中
+  - 基于 DOM 的 XSS 
+  - 持久型 XSS
+    - 又叫作存储型 XSS
+- XSS 攻击防护
+  - 验证输入 OR 验证输出
+  - 编码
+  - 检测和过滤
+  - CSP
+    - CSP（Content Security Policy，内容安全策略）
+    - 在服务端返回的 HTTP header 里面添加 一个 Content-Security-Policy 选项
+- SOP（Same Origin Policy，同源策略）
+  - window.location 来执行跳转操作
 
 
 
@@ -96,6 +111,10 @@
   - Apache Struts 2 漏洞
 - CVE-2017-12611
   - Apache Struts 2 漏洞
+- magic quotes
+  - 旧版本的 PHP 中，就存在“magic quotes”的漏洞
+  - 因为 PHP 无法处理某些编码的字符而导致崩溃
+- 
 
 
 
