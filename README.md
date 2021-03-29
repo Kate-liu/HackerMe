@@ -49,6 +49,8 @@ This is a Hacker Record，I hope to help you grown up!
 - [DatabaseTools](Tools/DatabaseTools.md)
 - [CryptographyTools](Tools/CryptographyTools.md)
 - [OAuth2.0Tools](Tools/OAuth2.0Tools.md)
+- [BrowserTools](Tools/BrowserTools.md)
+- [GoogleV8Tools](Tools/GoogleV8Tools.md)
 
 
 
