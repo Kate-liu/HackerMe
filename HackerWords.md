@@ -82,6 +82,12 @@
     - 在服务端返回的 HTTP header 里面添加 一个 Content-Security-Policy 选项
 - SOP（Same Origin Policy，同源策略）
   - window.location 来执行跳转操作
+- SQL 的 PrepareStatement 将解析和执行分开
+  -  PHP 中，使用 PDO（PHP Data Objects）
+  - C# 中，使用 OleDbCommand 
+  - Java 中，使用 prepareStatement
+  - 通过字符串拼接来构造 SQL语句，没有将解析和执行分开
+- 
 
 
 
