@@ -498,14 +498,16 @@
 
 ## 后端安全
 
-### 文件上传漏洞是什么？
+### 文件上传漏洞
+
+#### 文件上传漏洞是什么？
 
 - 文件上传（File Upload）是大部分Web应用都具备的功能，例如用户上传附件、改头像、分享图片等。
 - 文件上传漏洞是在开发者没有做充足验证（包括前端，后端）情况下，允许用户上传恶意文件，这里上传的文件可以是木马、病毒、恶意脚本或者Webshell等。 
 
 
 
-### Docker 使用
+#### Docker 使用
 
 - 官网
   - https://www.docker.com/
@@ -523,7 +525,7 @@
 
 
 
-### Webshell
+#### Webshell
 
 - 启动 bwapp  应用
 - 访问应用
@@ -565,7 +567,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 中国菜刀
+#### 中国菜刀
 
 - 简介：中国菜刀是一个 Webshell 集成环境 
 - 下载链接
@@ -578,7 +580,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 一句话木马
+#### 一句话木马
 
 - asp 一句话木马：
   - <%execute(request("value"))%> 
@@ -594,7 +596,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 后缀名绕过
+#### 后缀名绕过
 
 - 设置安全等级：Set your security level: **medium**
 
@@ -644,9 +646,9 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
   
 
-### 服务器关联型漏洞 
+#### 服务器关联型漏洞 
 
-#### IIS 5.x / 6.0 解析漏洞 
+##### IIS 5.x / 6.0 解析漏洞 
 
 - 漏洞1：当创建.asp的文件目录的时候，在此目录下的任意文件，服务器都解析为asp文件
 - 漏洞2：服务器默认不解析“;”以后的内容
@@ -658,7 +660,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-#### Nginx 解析漏洞 
+##### Nginx 解析漏洞 
 
   - 在低版本Nginx中存在一个由PHP-CGI导致的文件解析漏洞。
   - PHP的配置文件中有一个关键的选项cgi.fix_pathinfo在本机中位于php.ini配置文件中，默认是开启的。
@@ -670,7 +672,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-#### Apache 解析漏洞 
+##### Apache 解析漏洞 
 
 - Apache 在1.x和2.x版本中存在解析漏洞：
 - Apache从右至左开始判断后缀，跳过非可识别后缀，直到找到可识别后缀为止，然后将该可识别后缀进解析。
@@ -680,7 +682,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 前端验证绕过 
+#### 前端验证绕过 
 
 - 很多网站、CMS 都有使用，只在前端利用 JavaScript 来做校验。
 - 漏洞利用流程（两种方法都可以）：
@@ -691,7 +693,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### .htaccess绕过 
+#### .htaccess绕过 
 
 - 什么是.htaccess?
   - .htaccess文件（分布式配置文件）提供了一种方式，使得配置文件可以随文件夹不同而不同，其所放置的文件夹及所有子文件夹都会受此影响，其语法同apache主配置文件。
@@ -711,7 +713,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 大小写绕过 
+#### 大小写绕过 
 
 - 这是一种比较简单的绕过方式，同样针对黑名单。
 - 如果我们想上传一个php木马，那么我们可以上传一个pHp即可。
@@ -732,7 +734,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### Windows 文件流特性绕过 
+#### Windows 文件流特性绕过 
 
 - 什么是Windows文件流？
   - NTFS文件系统实现了多文件流特性，NTFS环境一个文件默认使用的是未命名的文件流，同时可创建其他命名的文件流，Windows资源管理器默认不显示出文件的命名文件流，这些命名的文件流在功能上和默认使用的未命名文件流一致，甚至可以用来启动程序。
@@ -755,7 +757,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### %00 截断绕过
+#### %00 截断绕过
 
 - 可以看到黑名单会存在巨大的被绕过的风险，无论是服务器原因还是操作系统原因，那么白名单是否完全安全呢？ 
 
@@ -806,7 +808,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 文件头检测绕过 
+#### 文件头检测绕过 
 
 - 常见文件头格式
   - png/jpg/gif
@@ -830,7 +832,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 源码审计
+#### 源码审计
 
 - 使用bWAPP将security level 设置为 High
 
@@ -944,21 +946,42 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### Fuzz 
+#### Fuzz 
+
+- 模糊测试
+  - 模糊测试（fuzz testing, fuzzing）是一种软件测试技术。
+  - 其核心思想是将自动或半自动生层的随机数据输入到一个程序中，并监视程序异常，如崩溃，断言（assertion）失败，以发现可能的程序错误，比如内存泄漏。模糊测试常常用于检测软件或计算机系统的安全漏洞。
+  - 模糊测试最早由威斯康星大学的Barton Miller 于1988年提出，他们的工作不仅使用随机无结构的测试数据，还系统的利用了一系列的工具去分析不同平台上的各种软件，并对测试发现的错误进行了系统的分析。此外，他们还公开了源代码，测试流程以及原始结果数据。
+  - link：https://zh.wikipedia.org/wiki/%E6%A8%A1%E7%B3%8A%E6%B5%8B%E8%AF%95
+- Web 安全与 Fuzz
+  - 使用 Burp Suite 进行 Fuzz 的使用
+  - 设置上传的security level: **medium**，随便上传一个文件
+  - 在Burp中找到上传失败的 HTTP ，右键 send to Intruder
+  - 进入 Intruder 选项，点击 Postions ，在内部选择自己测试的部分，删除其他的 § 符号
+  - 点击Payload，在 Payload Options[Simple list] 中，添加 new Item，如：txt，php，php3 等，可以积累一个自己的字典。
+  - 点击 Start attack，弹出请求与响应的页面
+  - 可以通过 Length 确定每一个响应的内容是什么，并进行比对
+- 注意事项 
+  - 模糊测试（fuzz testing)和渗透测试（penetration test）都是属于安全测试的方法，它们有同也有异，渗透测试一般是模拟黑客恶意入侵的方式对产品进行测试，对测试者的执行力要求很高，成本高，难以被大规模应用；而模糊测试，它能够充分利用机器本身，随机生成和发送数据；与此同时，又能够引进业内安全专家在安全性方面的建议。
+  - 使用过程有几点需要注意：
+    1. Fuzz过程由于会产生大量异常输入，未经人工分析，可能造成生产环境崩溃。
+    2. Fuzz过程会产生大量负载，可能会对生产环境造成影响。
+    3. 安全监测过程中很容易由于过多访问触发安全警报，进而为后续安全检测制造障碍。
+  - 因此Fuzz多用于非生产环境，在生产环境使用要十分慎重。 
+
+
+
+#### 防御措施 
+
+- 文件类型检测：白名单 优于 黑名单
+- 使用安全的函数进行编程
+- 熟悉业务部署环境的OS、Web Server配置 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
+### MySQL基础
 
 
 
