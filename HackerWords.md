@@ -87,6 +87,13 @@
   - C# 中，使用 OleDbCommand 
   - Java 中，使用 prepareStatement
   - 通过字符串拼接来构造 SQL语句，没有将解析和执行分开
+- CSRF（Cross-Site Request Forgery，跨站请求伪造）攻击
+  - CSRFToken 防护手段
+    - CSRFToken 是服务端随机生成返回给浏览器的
+  - 二次验证 防护手段
+    - 输入支付密码
+- SSRF（Server Side Request Forgery，服务端请求伪造）攻击
+  - 内网穿透
 - 
 
 
