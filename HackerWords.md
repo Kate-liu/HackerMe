@@ -94,6 +94,10 @@
     - 输入支付密码
 - SSRF（Server Side Request Forgery，服务端请求伪造）攻击
   - 内网穿透
+- POP，Property Oriented Programming
+  - 恶意的调用链
+-  RASP（Runtime Application Self-Protection，实时程序自我保护）
+  - 检测到应用中的非正常代码执行操作
 - 
 
 
