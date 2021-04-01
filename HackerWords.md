@@ -110,6 +110,21 @@
 - 直接的信息泄漏方式
   - 版本管理工具中的隐藏文件
   - 上传代码到 GitHub
+- 0 day
+  - 中文译为“零日”
+  - 在插件发布修复漏洞的安全补丁之前，黑客就已经知道漏洞细节的漏洞
+  - “0 day”就是只有黑客知晓的未公开漏洞
+- 插件
+  - 是第三方的插件、依赖库、工具和框架等的统称
+- 虚拟补丁
+  - 在不对应用插件进行升级的情况下，有效阻止攻击流量
+  - 在前置的网络或系统中，对针对插件漏洞的攻击流量进行检测和拦截即可，大部分防火墙、IPS 等安全防御工具，都会提供虚拟补丁的功能
+- 公开漏洞库
+  - CVE（Common Vulnerabilities &Exposures，公共漏洞和暴露）
+  - CWE（Common Weakness Enumeration，通用缺陷列表）
+  - CVSS（Common Vulnerability Scoring System，通用漏洞评分系统）
+  - NVD（National Vulnerability Database，国家信息安全漏洞库）
+  - CNVD(China National Vulnerability Database，中国国家信息安全漏洞库）
 - 
 
 
@@ -143,7 +158,23 @@
 - magic quotes
   - 旧版本的 PHP 中，就存在“magic quotes”的漏洞
   - 因为 PHP 无法处理某些编码的字符而导致崩溃
-- 
+- CVE-2016-5195
+  - 脏牛 漏洞
+  - Linux 系统漏洞，这个漏洞可以实现提权操作，也就是让低权限的用户获得较高权限
+- CVE-2014-0160
+  - 心脏滴血 漏洞
+  - 加解密插件 OpenSSL 中的漏洞，OpenSSL 曾为所有 HTTPS 网站提供数据加密保护
+  - 这个漏洞让任何人都可以通过网络读取 OpenSSL 系统内存中的数据，解密所有的加密流量
+
+
+
+
+
+
+
+
+
+
 
 
 

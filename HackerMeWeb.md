@@ -747,11 +747,11 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
      1. 使用命名的文件流111.txt创建文件 test.txt
      2. 直接打开，文件中没有数据，查看属性0字节
      3. 使用 notepad test.txt:111.txt 打开可以看到内容
-  2. Echo test > test.txt；
+  2. Echo test > test.txt
      1. 使用默认的文件流创建文件 test.txt
      2. 文件中的数据变成 test
      3. 查看属性7字节
-  3. Echo 222 > test.txt::$data；
+  3. Echo 222 > test.txt::$data
     1. 使用默认的文件流，:$data，创建文件 test.txt
     2. 直接打开，看到数据，查看属性6字节
 - 说明了哪些问题？
