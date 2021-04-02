@@ -2529,6 +2529,139 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### 二次注入 
 
+#### 二次注入定义
+
+- 数据库内容是否可信？ 
+  - 不一定可信
+- 给定一个账号注册输入 的场景
+  - 由于保存数据的时候，会有一个转义的防御机制，导致最终存入数据库的内容，就是自己页面注册账号的值，并不会变化
+  - 但是在后续业务操作逻辑中，修改内容，再一次调用的时候，就会出现二次注入
+
+![1617357895567](HackerMeWeb.assets/1617357895567.png)
+
+
+
+#### 二次注入实战
+
+- 安装 qli-labs  靶机，启动 sqli-labs 
+
+- 打开浏览器，输入，127.0.0.1/
+
+- 进入新网址，http://127.0.0.1/Less-24
+
+- 注册新用户
+
+  - 用户名：admin'#
+
+  - 密码：123
+
+  - 用户注册源码
+
+    - docker exec -it fervent_nightingale bash
+
+    - cd /var/www/html/Less-24
+
+    - vi login_create.php
+
+    - 将用户输入的内容进行了转义，然后保存到数据库
+
+      ![1617358390111](HackerMeWeb.assets/1617358390111.png)
+
+- 登录数据库，查看注册的用户信息
+
+  - docker ps
+  - docker exec -it fervent_nightingale bash
+  - mysql -u root -p
+  - show databases;
+  - use security;
+  - show tables;
+  - select * from users;
+    - 此时就可以看到用户的注册信息，密码还是明文存储的
+
+- 登录刚注册的用户
+
+  - 用户名：admin'#
+  - 密码：123
+
+- 更改用户密码
+
+  - 当前密码：123
+  - 新密码：456
+  - 重置
+  - 数据库查看，更改后的用户信息
+  - select * from users;
+    - 发现 admin 的密码变成了 456
+    - 而 admin'# 的密码还是 123
+
+- 源码剖析 
+
+  - cd /var/www/html/Less-24
+  - vi pass_change.php
+  - 可以看到更新密码的时候，在 UPDATE 语句中，`$pass` 的值没有问题，`$username`的值出问题了，由于当前的用户名为 admin'# ，导致当前的单引号直接闭合了前面的用户名，后面的#号直接注释了后面的密码语句
+  - 此时 UPDATE 语句执行结束之后，admin 的密码就被更改了，而admin'# 的密码没有被更改，实现二次注入。
+  - ![1617358822001](HackerMeWeb.assets/1617358822001.png)
+  - 继续分析源码，可以看到用户的cookie过期时间为 15 min。
+  - ![1617358717275](HackerMeWeb.assets/1617358717275.png)
+
+
+
+#### 防御方式 
+
+- 代码与数据分离：预编译
+- 禁止用户账号出现特殊符号 
+
+
+
+### 命令执行 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
