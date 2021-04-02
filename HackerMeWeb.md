@@ -1047,6 +1047,26 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
+#### Docker 安装 Linux
+
+- 在实际的演示中，会使用到linux系统，但是直接使用VMWare安装，比较麻烦，所以直接借助于 docker 安装linux了
+- 安装的版本是 centos linux
+- 安装命令
+  - docker search centos
+  - docker pull centos
+  - docker images
+  - dockerdocker run -d -i -t imageID /bin/bash
+  - docker container list -a
+  - docker ps
+  - docker attach busy_blackwell
+    - 进入交互式界面，可以执行命令了
+
+
+
+
+
+
+
 #### RDBMS术语
 
 - 数据库: 数据库是一些关联表的集合

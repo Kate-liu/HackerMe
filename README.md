@@ -51,6 +51,7 @@ This is a Hacker Record，I hope to help you grown up!
 - [OAuth2.0Tools](Tools/OAuth2.0Tools.md)
 - [BrowserTools](Tools/BrowserTools.md)
 - [GoogleV8Tools](Tools/GoogleV8Tools.md)
+- [LinuxTools](Tools/LinuxTools.md)
 
 
 
