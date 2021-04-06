@@ -187,7 +187,17 @@
   - 黑客如果直接对目标网络发起 DoS 攻击，很容易就会被溯源出来
 - ICMP 协议的“死亡之 PING”
   - 旧版本的 Windows 系统在处理超长的 ICMP 包时会报错死机
-- 
+- Docker 逃逸
+  - 黑客突破了 Docker 服务的隔离保护
+  - 3 个关键的隔离机制：Namespace 机制、Capabilities 机制和 CGroups 机制
+  - Namespace 是 Linux 提供的一种标签机制，Linux 内核会对不同 Namespace 之间的进程做隔离，避免不同的进程之间互相产生影响。
+    - 基于 Namespace 的隔离一般叫它“伪隔离”
+  - Capabilities 提供了更细粒度的授权机制，它定义了主体能够进行的某一类操作
+    - 防止 ROOT权限滥用，Docker 会通过 Capabilities，给予这个 Web 服务 net_bind_service 这个权限（允许绑定到小于 1024 的端口）
+    - 默认情况下，Docker 会采用白名单机制（白名单列表你可以在 Docker 源码中查看）进行限制，即只允许 Docker 容器拥有几个默认的能力
+  - 利用 CGroups 机制来实现对容器中内存、CPU 和 IO 等的限制
+- 2375 端口
+  - 守护进程 API 默认监听的端口
 
 
 
