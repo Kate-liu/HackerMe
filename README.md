@@ -46,7 +46,6 @@ This is a Hacker Record，I hope to help you grown up!
 
 ## Tools
 
-- [DatabaseTools](Tools/DatabaseTools.md)
 - [CryptographyTools](Tools/CryptographyTools.md)
 - [OAuth2.0Tools](Tools/OAuth2.0Tools.md)
 - [BrowserTools](Tools/BrowserTools.md)
@@ -55,6 +54,8 @@ This is a Hacker Record，I hope to help you grown up!
 - [NetworkTools](Tools/NetworkTools.md)
 - [KubernetesTools](Tools/KubernetesTools.md)
 - [ContainerTools](Tools/ContainerTools.md)
+- [RedisTools](Tools/RedisTools.md)
+- [MySQLTools](Tools/MySQLTools.md)
 
 
 
