@@ -187,6 +187,14 @@
   - 黑客如果直接对目标网络发起 DoS 攻击，很容易就会被溯源出来
 - ICMP 协议的“死亡之 PING”
   - 旧版本的 Windows 系统在处理超长的 ICMP 包时会报错死机
+- SYN 洪泛
+- 熊猫烧香
+  - 扫描的是 135 和 445 端口的弱密钥
+  - Windows 中的 135、137 和 445端口
+- 永恒之蓝
+  - 利用的 SMB 漏洞
+- 中国的防火长城（Great Firewall）
+  - 根据法律法规，防止国内网民访问国外违法的数据信息
 - Docker 逃逸
   - 黑客突破了 Docker 服务的隔离保护
   - 3 个关键的隔离机制：Namespace 机制、Capabilities 机制和 CGroups 机制
