@@ -3235,6 +3235,71 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
 ### 自动化注入之 FuzzDB + Burp 
 
+#### FuzzDB
+
+- 一个开源的应用程序模糊测试数据库，包含了各种攻击 payload 的测试用例集合。
+- OS 命令注入，目录遍历，文件上传绕过，身份验证绕过，XSS，SQL 注入，HTTP 头注入、CRLF 注入，NoSQL 注入等功能。
+- 还包含了一些用不同语言写成的 webshell 与常用的账号密码字典。 
+- 下载：https://github.com/fuzzdb-project/fuzzdb
+
+
+
+#### CTF 靶机 
+
+- SQLi-CTF：A training CTF covering non-blind SQL injection techniques
+- `git clone https://github.com/Corb3nik/SQLi-CTF`
+- `cd SQLi-CTF`
+- `docker-compose up`
+- 浏览器访问，http://127.0.0.1:12000/
+
+
+
+#### Burp 实战
+
+- 安装 CTF 靶机，并启动
+- 进入网址，http://127.0.0.1:12000/level2.php
+- 启动 burp Suite，设置 Target ---> Scope ---> Use advanced scope control  ---> Add ---> xforburp.com 12000  ---> ok
+- 关闭 Proxy ---> Intercept ---> Intercept is off
+- 浏览器访问，http://xforburp.com:12000/
+  - 由于我本机问题，借助了 Switchhost 工具，进行域名与IP 的对应
+- 进入 level 2
+  - http://xforburp.com:12000/level2.php
+  - 但是测试 burp 没有监测到内容，查看路径 Proxy  ---> HTTP history，后续的 Intruder 也就没法实现了，懵逼~
+- 假设可以监测到请求，在 level 2 的页面中，随便输入一个用户名和密码，就会在 burp 中看到一个 POST 请求
+  - 右键，Send to Intruder
+- 进入Intruder ，更改请求中的注入 Positions 为 username
+  - 这里对 uname 一个地方加符号，表示用 payload 替换。
+- 设置 Attack type 为 Sniper
+  - sniper 狙击手，使用单一词典，每次仅变更一个参数，如果 uname、password 都是变量，会先让uname 遍历字典，password 不变，后变 password，uname 不变。
+  - Battering ram 攻城锤, 使用单一词典，有多个变量，同时变更为同一值。
+  - Pitchfork 音叉，每个变量一个字典。一次失败后，三个变量同时改变，一个变量不会与另一个变量所有情况匹配到。
+  - Cluster bomb 集束炸弹，笛卡尔积，形式，每隔一个变量要与另一个变量所有情况测试到，在多个字典情况下，测试时间非常漫长。 
+- 在 Payloads 中的 Payload Opyions[Simple list] 中，load 文件 ...\fuzzdb\attack\sql-injection\detect\xplatform.txt 
+  - 此时就可以开电脑所有的SQL注入攻击测试例子
+  - 如果测试用例过多。可以在 option 选项对线程数目进行设定。 
+- 点击 Start attack
+  - 会弹出一个对话框
+  - 观察 Length 列，出现了1858,1846和1500 等多种长度
+  - 不同的长度反应了注入的结果不一样，对比不同的长度，可以找到注入成功的示例
+- 注入测试
+  - 图示加载了多个字典，发现了多个攻击脚本能够渗透完成 。
+  - 字典里面含有这些符号，目的是用于测量服务端和 WAF 哪些符号是被过滤的，然后针对过滤的参数进行修改 payload，比如 sqlmap 的 tamper 参数。
+  - 在遇到一些特殊情况，也可以针对具体的情况编写脚本进行注入。
+  - 这里由于是测试平台，返回的状态都是 200 ，实际使用渗透过程中服务器响应，WAF 拦截，报错，会响应各种状态码，可以通过状态码筛选正确的 payload，直接或间接利用。
+  - 这里通过长度大小来判断哪些是成功注入的，发现多个成功注入，这里的长度是返回页面的长度大小。 
+
+
+
+### Webshell 
+
+
+
+
+
+
+
+
+
 
 
 
