@@ -1,6 +1,8 @@
 # Hacker Words
 
 - WAF（Web 应用程序防火墙）
+  - Web Application Firewall
+  - 只专注于 Web 安全的防御，Web 安全关注于应用层的HTTP 请求
 - OGNL 语言（Object-Graph Navigation Language，对象图导航语言）
   - OGNL充斥在Struts2前后台数据传递与存储的方方面面，给Struts2中数据的处理带来了极大的方便
   - 它是一门表达式语言，除了用来设置和获取Java对象的属性之外，另外提供诸如集合的投影和过滤以及lambda表达式等
@@ -210,6 +212,7 @@
   - HDFS 提供了大数据存储的文件系统支持
   - YARN 提供了大数据运算的资源调度能力
   - MapReduce 的计算框架，更是彻底革新了数据运算的方式
+- AOP（Aspect Oriented Programming，面向切面编程）技术
 
 
 
