@@ -252,6 +252,14 @@
 -  SIEM（Security Information and Event Management，安全信息和事件管理）
   - 运营一个安全体系
   - SIEM 就是一个基于各类日志，提供安全运营和管理能力的统一平台
+- SDL（Security Development Lifecycle，安全开发生命周期）
+  - SDL 能够帮助开发人员写出更“安全”的代码
+  - SDL 本质上是一个宏观指导性质的框架
+  - SDL 是以软件开发生命周期为基础发展成的安全框架
+  - SDL 的标准执行流程有 7 个步骤：安全培训、需求分析、设计、开发、测试、部署和响应
+- 软件开发生命周期 DLC（Software Development Life Cycle）
+  - DLC 将软件开发过程分为 5 个阶段：需求分析、设计、开发、测试和部署。
+  - 以业务功能为核心进行展开的，并没有涵盖安全的工作
 
 
 
