@@ -240,6 +240,15 @@
   - 高交互蜜罐
     - 会提供一个真实的服务，而且不施加任何限制，只是用来做详细的记录而已
     - 高交互蜜罐对黑客更有吸引力，让我们能有更大的概率发现入侵攻击的行为。
+- RASP（Runtime Application SelfProtection）
+  - 将安全产品部署在应用的底层，完全站在应用的视角去发现攻击行为，从而实现更加完善的安全防护
+  - RASP 的设计思路是通过监控应用的底层，来从根本上发现攻击行为的产生。
+  - 例子：通过 JavaAgent 的形式将 RASP 运行在 JVM 上，然后借助 Instrumentation技术 Hook 关键的类和方法。
+  - 在 PHP 中，我们可以通过 PHP 扩展库来实现 RASP
+  - 在.Net 中，我们可以通过 HostingStartup 来实现 RASP
+  - RASP 防止 SQL 注入
+  - RASP 防范未知的攻击
+  - RASP 基本不用维护规则
 
 
 
