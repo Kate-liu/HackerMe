@@ -249,6 +249,9 @@
   - RASP 防止 SQL 注入
   - RASP 防范未知的攻击
   - RASP 基本不用维护规则
+-  SIEM（Security Information and Event Management，安全信息和事件管理）
+  - 运营一个安全体系
+  - SIEM 就是一个基于各类日志，提供安全运营和管理能力的统一平台
 
 
 
