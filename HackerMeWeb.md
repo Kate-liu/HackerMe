@@ -3676,7 +3676,208 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
 
 
-### 框架安全 
+### SQL 注入防御
+
+#### SQL 注入形成原因
+
+- 用户能够控制传参
+- SQL 语句中拼接了用户传参的内容
+- 拼接后的 SQL 语句在数据库中执行
+- 总结：用户输入的数据作为代码执行！ 
+
+
+
+#### 防御措施 
+
+- 预处理方式 
+  - 参数化查询
+  - 存储过程
+- 过滤方式
+  - 白名单
+  - 转义
+
+
+
+#### 防御措施 - 参数化查询
+
+- 参数化查询是指在设计与数据库连接并访问数据时，在需要填入数值或数据的地方使用参数该给值。 
+
+![1617932558014](HackerMeWeb.assets/1617932558014.png)
+
+- Payload1: ?id=1 and 1=1 
+- Payload2: ?id=1’ and 1=1 --+ 
+  - 单引号被转义
+- Payload3: ?id=1%df’ and 1=1 --+ 
+  - 不可识别的字符显示为？,并且单引号被转义
+
+![1617932623658](HackerMeWeb.assets/1617932623658.png)
+
+- 预处理语句：将需要执行的 SQL 语句作为编译过的模板
+
+- `$stmt = $db_connection->prepare("SELECT name FROM users where id = ?");`
+
+  - 这里的？是一个占位符号也可以使用:id的形式进行占位
+  - prepare 就是完成语句预处理的过程 
+
+- `$stmt->execute(array($_GET['id']))`
+
+  - execute 使用参数填充占位符，并执行 SQL 语句 
+
+- SQL 注入
+
+  - SQL 注入旨在影响 SQL 语句的编译过程
+  - 用户输入的数据中包含了数据库中的关键字，被拼接到 SQL 语句中进行了编译 
+
+- 参数化查询
+
+  - prepare 命令会带着占位符被数据库进行编译和解析，并放到命令缓冲区
+  - execute  带着参数调用预编译的命令并解析，但是不会重新编译命令 
+
+- SQL 语句执行示意图
+
+  ![1617932952968](HackerMeWeb.assets/1617932952968.png)
+
+- 下面的 Java 代码使用了 setString 进行了参数的绑定 
+
+  ```java
+  String sql="select * from user where id =?";
+  preparedStatement statement=connection.prepareStatement(sql);
+  statement.setString(1,,"1' or '1'='1");
+  Statement.executeQuery();
+  ```
+
+  - 进行反编译后查看到的源码文件
+  - 通过对不同特殊字符的匹配，进行相应的内容转义，保证 SQL 执行不受到影响
+  - ![1617933064889](HackerMeWeb.assets/1617933064889.png)
+
+
+
+
+
+#### 防御措施 - 存储过程
+
+- 存储过程是指数据库中存放了一组 为完成特定功能的 SQL 语句，这些语句一次编译后永久有效，用户通过指定存储过程的名字并给出参数来执行这些语句。 
+
+- 存储过程 vs 参数化查询
+
+  - 存储过程的 SQL 语句**存放在数据库**中，用户通过调用这些过程获取数据。
+  - 参数化查询的 SQL 语句是通过 Web 应用完成执行。 
+
+- 创建一个存储过程方式
+
+  ![1617933269854](HackerMeWeb.assets/1617933269854.png)
+
+- 存储过程的SQL调用
+
+  - 直接使用 call 进行调用
+
+  ![1617933303969](HackerMeWeb.assets/1617933303969.png)
+
+- 存储过程测试
+
+  - Payload: username=Dumb'-- qwe password=fdasfdas 
+
+    ![1617933368796](HackerMeWeb.assets/1617933368796.png)
+
+- 存储过程被创建后存放在表 mysql.proc 中 
+
+  - `select * from mysql.proc \G`
+
+    ![1617933461597](HackerMeWeb.assets/1617933461597.png)
+
+  - 存储过程执行调用函数流程图
+
+    ![1617933556385](HackerMeWeb.assets/1617933556385.png)
+
+
+
+#### 防御措施 - 存储过程 + 参数化查询
+
+- 联合两种预处理方式，实现防御
+
+- 执行程序
+
+  ![1617933672308](HackerMeWeb.assets/1617933672308.png)
+
+- SQL 测试
+
+  - Payload1: username:Dumb' -- qwe password:fdasfdas 
+
+  - Payload2: username:Dumb0xdf' -- qwe password:fdasfdas 
+
+    ![1617933709981](HackerMeWeb.assets/1617933709981.png)
+
+
+
+#### 防御措施 - 白名单
+
+- 只接受来自白名单中规定的传参内容，白名单之外的内容直接丢弃。
+
+- 该种方法适用于传参内容可以穷举，且不频繁变化的场景。 
+
+- 下拉菜单模式
+
+  - 用户通过下拉菜单的方式进行输入
+
+  - 后端接收到用户传参之后，进行校验 
+
+  - ```javascript
+    string value;
+    
+    switch(case):
+        case 1:value='a';break;
+        case 2:value='b';break;
+        //...
+        default:输入内容不合法
+    ```
+
+- 转换为布尔值
+
+  - 对于某些简单的操作，比如排序。可以将用户的传参转换为布尔值，而不是直接使用用户的传参 
+  - `concat(“select username from users order by salary ”,”(sortOrder?'ASC':'DESC')”); `
+
+
+
+#### 防御措施 - 转义
+
+- 对用户输入的特殊字符进行转义，这些字符可能会影响 SQL 代码的执行。 
+
+- 不信任用户输入的数据，对用户输入的数据进行转义后在代入程序中执行。 
+
+- 转义的方案根据数据库的不同会有所差异。 
+
+- MySQL 转义 
+
+  - | 转义序列 | 字符      | 说明                                         |
+    | -------- | --------- | -------------------------------------------- |
+    | \0       | NULL字符  |                                              |
+    | \’       | 单引号    | 闭合程序中的单引号                           |
+    | \”       | 双引号    | 闭合程序中的双引号                           |
+    | \b       | 退格      | 覆盖文本内容                                 |
+    | \n       | 换行      |                                              |
+    | \r       | 回车      |                                              |
+    | \t       | 制表符    |                                              |
+    | \Z       | Contorl+Z | 在Windows上代表END-OF-FILE                   |
+    | \\       | 反斜杠    | 可以用作转义，转义系统中对用户输入内容的转义 |
+    | \%       | %         | 可以作为通配符                               |
+    | \_       | _         | 可以作为通配符                               |
+
+- 十六进制 
+
+  - 正常 SQL 命令
+    - 用户传参  id=3324
+    - 执行命令  select * from users where id='3324' 
+  - 恶意 SQL 命令 
+    - 用户传参  id= ' union select database() 
+    - 执行命令  select * from users where id= '' union select database() 
+  - 正常 SQL 命令（十六进制编码） 
+    - 用户传参  id=3324
+    - 执行命令  select * from users where hex(id)='33333234' 
+  - 恶意 SQL 命令 （十六进制编码） 
+    - 用户传参  id= ' union select database() 
+    - 执行命令  select * from users where hex(id)='201920756E696F6E2073656C6563742064617461626173652829' 
+
+
 
 
 
