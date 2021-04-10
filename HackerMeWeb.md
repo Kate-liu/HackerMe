@@ -4087,10 +4087,232 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
       - 此时，可以看到一个刚刚创建的文件 success
       - 此时就完成了漏洞利用
     - ![1617976269822](HackerMeWeb.assets/1617976269822.png)
+    
+  - 请求报文剖析 
+  
+    - 一串数字，116,111,117,99,104,32,47,116,109,112,47,115,117,99,99,101,115,115 
+    - 对应的命令为，`touch /tmp/success ` ，所以才会创建一个 新的目录
 
 
 
-### 探究 CVE-2017-8046 
+### CVE-2017-8046 源码下载
+
+- 源码下载
+  - 下载eclipse，安装反编译插件，
+  - 在市场（搜索 market）可以搜索 decompile 第一是反编译的，下载
+  - References - General－Editor－File Associations－修改class文件、class without source文件打开方式，下方 选择decompile viewer，并设置成默认
+  - 本文所用示例为spring官方教程, 仅版本修改至1.5.6.release 有漏洞的版本， 
+- 备注
+  - 我直接在 github 上下载程序，https://github.com/spring-guides/gs-accessing-data-rest
+  - 内部pom依赖使用了 1.5.6.release  版本，直接 intellJ 加载complete，就可以看到源码信息
+  - 可以通过直接修改 pom 文件中的 version，更改版本号
+
+
+
+### CVE-2017-8046 漏洞调试
+
+- 阅读源码，程序调试
+
+  - 项目引入 1.5.6.RELEASE 版本
+
+    - ```xml
+          <parent>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-starter-parent</artifactId>
+              <version>1.5.6.RELEASE</version>
+          </parent>
+      ```
+
+  - 进入文件，org.springframework.data.rest.webmvc.config.PersistentEntityResourceHandlerMethodArgumentResolver#readPatch
+
+    - 可见 `JsonPatchHandler handler = new JsonPatchHandler(mapper, reader);`
+    - JsonPatchHandler 处理器用于处理 HTTP Json Patch 类型请求 
+
+  - 进入 apply 方法，org.springframework.data.rest.webmvc.config.JsonPatchHandler#apply
+
+    - 可见 
+
+      ```java
+      if (request.isJsonPatchRequest()) {
+          return applyPatch(request.getBody(), target);
+      } else {
+          return applyMergePatch(request.getBody(), target);
+      }
+      
+      
+      // org.springframework.data.rest.webmvc.IncomingRequest#isJsonPatchRequest
+      	/**
+      	 * Returns whether the request is a PATCH request with a payload of type {@link RestMediaTypes#JSON_PATCH_JSON}.
+      	 * 
+      	 * @return
+      	 */
+      	public boolean isJsonPatchRequest() {
+      		return isPatchRequest() && RestMediaTypes.JSON_PATCH_JSON.isCompatibleWith(contentType);
+      	}
+      ```
+
+    - 用于判断是否为 JsonPatch 的请求 
+
+  - 进入applyPatch 方法，org.springframework.data.rest.webmvc.config.JsonPatchHandler#applyPatch
+
+    - ```java
+      	@SuppressWarnings("unchecked")
+      	<T> T applyPatch(InputStream source, T target) throws Exception {
+      		return getPatchOperations(source).apply(target, (Class<T>) target.getClass());
+      	}
+      
+      // org.springframework.data.rest.webmvc.config.JsonPatchHandler#getPatchOperations
+      	/**
+      	 * Returns all {@link JsonPatchOperation}s to be applied.
+      	 * 
+      	 * @param source must not be {@literal null}.
+      	 * @return
+      	 * @throws HttpMessageNotReadableException in case the payload can't be read.
+      	 */
+      	private Patch getPatchOperations(InputStream source) {
+      
+      		try {
+      			return new JsonPatchPatchConverter(mapper).convert(mapper.readTree(source));
+      		} catch (Exception o_O) {
+      			throw new HttpMessageNotReadableException(
+      					String.format("Could not read PATCH operations! Expected %s!", RestMediaTypes.JSON_PATCH_JSON), o_O);
+      		}
+      	}
+      ```
+
+    - 上面的方法有两块内容，一个是获取含有Payload的 path 并且转变为spel表达式，就是下面的方法，另一个就是对前面返回的值进行 具体执行。
+
+    - Spring Expression Language（缩写为 SpEL ）是一种强大的表达式语言。支持在运行时查询和操作对象，它可以与基于 XML 和基于注解的 Spring 配置还有 Bean 定义一起使用。  
+
+  - 进入 convert 方法，org.springframework.data.rest.webmvc.json.patch.JsonPatchPatchConverter#convert(com.fasterxml.jackson.databind.JsonNode)
+
+    - ```java
+      public Patch convert(JsonNode jsonNode) {
+      
+      		if (!(jsonNode instanceof ArrayNode)) {
+      			throw new IllegalArgumentException("JsonNode must be an instance of ArrayNode");
+      		}
+      
+      		ArrayNode opNodes = (ArrayNode) jsonNode;
+      		List<PatchOperation> ops = new ArrayList<PatchOperation>(opNodes.size());
+      
+      		for (Iterator<JsonNode> elements = opNodes.elements(); elements.hasNext();) {
+      
+      			JsonNode opNode = elements.next();
+      
+      			String opType = opNode.get("op").textValue();
+      			String path = opNode.get("path").textValue();
+      
+      			JsonNode valueNode = opNode.get("value");
+      			Object value = valueFromJsonNode(path, valueNode);
+      			String from = opNode.has("from") ? opNode.get("from").textValue() : null;
+      
+      			if (opType.equals("test")) {
+      				ops.add(new TestOperation(path, value));
+      			} else if (opType.equals("replace")) {
+      				ops.add(new ReplaceOperation(path, value));
+      			} else if (opType.equals("remove")) {
+      				ops.add(new RemoveOperation(path));
+      			} else if (opType.equals("add")) {
+      				ops.add(new AddOperation(path, value));
+      			} else if (opType.equals("copy")) {
+      				ops.add(new CopyOperation(path, from));
+      			} else if (opType.equals("move")) {
+      				ops.add(new MoveOperation(path, from));
+      			} else {
+      				throw new PatchException("Unrecognized operation type: " + opType);
+      			}
+      		}
+      ```
+
+    - 在漏洞测试过程中，`ArrayNode =[{ "op": "replace", "path": "T(java.lang.Runtime).getRuntime().exec(new java.lang.String(new byte[]{116,111,117,99,104,32,47,116,109,112,47,115,117,99,99,101,115,115}))/lastName","value": "test" }]`
+
+    - 遍历PATCH方法发送上去的数据， 生成对应的操作对象，下面所有操作对象如 ReplaceOperation继承自抽象类 PatchOperation。 
+
+  - 进入PatchOperation 类 ，org.springframework.data.rest.webmvc.json.patch.PatchOperation
+
+    - ```java
+      public abstract class PatchOperation {
+      
+          public PatchOperation(String op, String path, Object value) {
+      
+              this.op = op;
+              this.path = path;
+              this.value = value;
+              this.spelExpression = pathToExpression(path);
+          }
+      }
+      ```
+
+    - 在上一个页面中 ，创建了 replaceOperation对象并且的进行了初始化，初始化代码在这里。这里对 path 的值包含了我们上传的payload，这里把path经过转换赋值给spelExpression。
+
+    - 因为对输入路径进行了转换，以及payload构造依赖的逻辑就在内部。 
+
+  - 进入applyPatch 方法中调用的 apply 方法，org.springframework.data.rest.webmvc.json.patch.Patch#apply(T, java.lang.Class<T>)
+
+    - ```java
+      	public <T> T apply(T in, Class<T> type) throws PatchException {
+      
+      		for (PatchOperation operation : operations) {
+      			operation.perform(in, type);
+      		}
+      
+      		return in;
+      	}
+      ```
+
+    - 在回过头看 apply，
+
+    - 在最下面一步的时候spelExpression expression值包含了Payload 此前经过转换，斜杠已经变成点
+
+    - 在正常情况下， expression应该只包含 lastname 然后用spel表达式对下面的lastname Li 进行替换，替换的值为test 
+
+    - ![1618024702239](HackerMeWeb.assets/1618024702239.png)
+
+    - 命令执行漏洞利用成功
+
+      - `people1:lastName="#{T(java.lang.Runtime).getRuntime().exec("touch /tmp/success").lastName}" `
+      - 上面是在这里通过 spel表达式产生命令执行漏洞的实际语句。 
+
+
+
+### CVE-2017-8046 漏洞修复
+
+- 在1.5.7 版本中就对漏洞进行了修复，PatchOperation 类的 evaluateValueFromTarget 方法里面加入了verifyPath, 对路径的有效性做了验证，主要过滤了数字 。 
+- org.springframework.data.rest.webmvc.json.patch.PatchOperation#evaluateValueFromTarget
+- ![1618025036520](HackerMeWeb.assets/1618025036520.png)
+
+
+
+### 官方漏洞网站
+
+- 关注官方网站，及时追踪更新。
+- CVE 
+  - https://cve.mitre.org/
+- Exploit Database 
+  - https://www.exploit-db.com
+- ZERODIUM 
+  - https://zerodium.com/
+
+
+
+
+
+## 前端安全
+
+### 反射型 XSS 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
