@@ -5646,7 +5646,7 @@ CISP（Certified Information Security Professional ，注册信息安全专业�
 
 - https://www.offensive-security.com/
 
-CISP 和 CISSP 是更偏向**公司防御的证书**，而OSCP（Offensive Security CertifiedProfessional，安全攻击专业认证）是**专门针对攻击渗透的证书**，最近也比较热门。如果你在自主训练时觉得缺乏明确的方向，其实可以尝试通过考取 OSCP 证书来获得指导。另外，CTF 比赛竞争还是比较激烈，拿到名次也很难。因此，我认为可以将 OSCP 作为 CTF之外的另一种选择，只要拿到了 OSCP 证书，同样能够证明你的**攻击渗透能力达到了可以实际运用的水平**。 
+CISP 和 CISSP 是更偏向**公司防御的证书**，而OSCP（Offensive Security Certified Professional，安全攻击专业认证）是**专门针对攻击渗透的证书**，最近也比较热门。如果你在自主训练时觉得缺乏明确的方向，其实可以尝试通过考取 OSCP 证书来获得指导。另外，CTF 比赛竞争还是比较激烈，拿到名次也很难。因此，我认为可以将 OSCP 作为 CTF之外的另一种选择，只要拿到了 OSCP 证书，同样能够证明你的**攻击渗透能力达到了可以实际运用的水平**。 
 
 
 
@@ -5791,8 +5791,6 @@ IPv4 由于地址匮乏，有很高的复用性（一个学校可能都在共用
 
 
 
-
-# 结束语
 
 
 
