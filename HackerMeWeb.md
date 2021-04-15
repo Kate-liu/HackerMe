@@ -4157,10 +4157,10 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
     - ```java
       	@SuppressWarnings("unchecked")
-      	<T> T applyPatch(InputStream source, T target) throws Exception {
-      		return getPatchOperations(source).apply(target, (Class<T>) target.getClass());
-      	}
-      
+        	<T> T applyPatch(InputStream source, T target) throws Exception {
+        		return getPatchOperations(source).apply(target, (Class<T>) target.getClass());
+        	}
+        
       // org.springframework.data.rest.webmvc.config.JsonPatchHandler#getPatchOperations
       	/**
       	 * Returns all {@link JsonPatchOperation}s to be applied.
@@ -4252,13 +4252,13 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
     - ```java
       	public <T> T apply(T in, Class<T> type) throws PatchException {
-      
-      		for (PatchOperation operation : operations) {
-      			operation.perform(in, type);
-      		}
-      
-      		return in;
-      	}
+        
+        		for (PatchOperation operation : operations) {
+        			operation.perform(in, type);
+        		}
+        
+        		return in;
+        	}
       ```
 
     - 在回过头看 apply，
@@ -4300,7 +4300,140 @@ Linux 用户分为管理员和普通用户，普通用户又分为系统用户�
 
 ## 前端安全
 
-### 反射型 XSS 
+### XSS 
+
+#### XSS（跨站脚本攻击）
+
+OWASP Top10 2017 第七，浏览器将用户输入的内容，当做脚本执行，执行了恶意的功能，这种针对用户浏览器的攻击即跨站脚本攻击。
+
+主要分为三种类型：
+
+- 反射型
+- 存储型
+- DOM 型  
+
+
+
+#### XSS 危害
+
+- 盗取 Cookie
+- 盗取账户
+- 恶意软件下载
+- 键盘记录
+- 广告引流等等 
+- JavaScript 能够写出的任意恶意功能 
+
+
+
+### 反射型 XSS
+
+#### 定义
+
+应用程序或 API 包括未经验证和未经转义的用户输入， 直接作为 HTML 输出的一部分。一个成功的攻击可以让攻击者在受害者的浏览器中执行任意的 HTML 和 JavaScript 。
+
+特点：非持久化，必须用户点击带有特定参数的链接才能引起。
+
+影响范围：仅执行脚本的用户。 
+
+
+
+#### GET 测试
+
+- 安装 bWAPP 靶机，启动，进入浏览器，输入 http://127.0.0.1/portal.php ，登录
+
+- Choose your bug:
+
+  - Cross-Site Scripting - Reflected (GET)
+
+- 测试输入
+
+  - First name:
+    - TE
+  - Last name:
+    - test
+
+- 测试展示
+
+  - Welcome TE test
+
+- 脚本输入
+
+  - <script>alert(1);</script>
+
+  - test
+
+- 脚本展示
+
+  - 弹出对话框 1，并且可以点击确定
+  - 可以点击查看页面元素，此时的JavaScript脚本被浏览器执行
+
+- 跳转脚本输入
+
+  - <script>alert("点击确定修复");location.href="https://www.baidu.com"</script>
+
+  - test
+
+- 跳转脚本展示
+
+  - 弹出 点击确定修复 对话框，并且可以点击确定
+  - 此时浏览器的页面就会跳转到新的百度首页
+
+- cookie 获取脚本输入
+
+  - <script>alert(document.cookie);</script>
+
+  - test
+
+- cookie 获取脚本展示
+
+  - 弹出对话框，展示的内容是 cookie的值，为 csrftoken=ARDPhdClAyvSmEJcAmE953XMbXI527GrUDAbbHZ1sIpUwsYaW8MBwDaFBd4ksUu1; security_level=0; PHPSESSID=hgj7ffva55bcajadb9u6nnmi62
+  - 并且可以直接点击
+
+
+
+#### 短链接实现
+
+- 在跳转的时候，一般浏览器的地址栏中会有一长串的内容，用户是否会起疑心呢？
+- 例如 跳转脚本输入 的时候，浏览器的地址栏内容为：http://127.0.0.1/xss_get.php?firstname=%3Cscript%3Ealert%28%22%E7%82%B9%E5%87%BB%E7%A1%AE%E5%AE%9A%E4%BF%AE%E5%A4%8D%22%29%3Blocation.href%3D%22https%3A%2F%2Fwww.baidu.com%22%3C%2Fscript%3E&lastname=test&form=submit
+-   可以用 https://www.985.so/ 该网站，将上述长链接压缩为 http://b9q.net/b11zc
+- 将上述连接输入到 浏览器网址就会出现 跳转脚本输入 的场景
+
+
+
+#### HREF 测试
+
+- 安装 bWAPP 靶机，启动，进入浏览器，输入 http://127.0.0.1/portal.php ，登录
+- Choose your bug:
+  - Cross-Site Scripting - Reflected (HREF)
+- 测试输入
+  - name
+  - 此时，就会展示出一个电影列表，可以进行相应的投票
+- 弹出 XSS 测试
+  - 输入： <script>alert(1);</script>
+  - 此时并没有弹出框，是因为JavaScript脚本被放到了 p 标签中，导致将其解析为文本内容，无法执行
+  - 解决办法：闭合标签大法，闭合前面的 p 标签就可以
+  - 输入：</p><script>alert(1);</script><p>
+  - 此时，就会出现一个弹出框，并且可以点击确定，并且会一直处于需要点击的过程中，也就被卡死了
+
+
+
+#### 限制与防御
+
+- 危害范围相对较小，危险程度相对来说是比较小的
+- 多为一次点击触发一次
+- 对陌生的链接，不要随意点开。 
+
+
+
+
+
+### 存储型 XSS 
+
+
+
+
+
+
 
 
 
