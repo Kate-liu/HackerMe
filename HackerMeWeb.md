@@ -4968,19 +4968,131 @@ DOM 型 XSS 其实是一种特殊类型的反射型 XSS，通过 JS 操作 DOM �
 
 ### CSRF 
 
+#### HTTP
+
+- HTTP 协议是（Hyper Text Transfer Protocol）超文本传输协议的缩写。
+- 主要用于 Web 端的内容获取，也就是访问 Web 页面所使用的协议。 
+- 客户端与服务端通信过程
+  - ![1618737327300](HackerMeWeb.assets/1618737327300.png)
+- 无记忆性：
+  - HTTP 是一种无状态协议，即服务器不会保留与客户交易时的状态。
+  - 用户 A 在很短的时间间隔内向 Web 服务器发送了两次同样的请求，服务器并不会因为已经响应了该请求一次就不对第二次请求进行响应，因为服务器并不知道已经响应过一次该请求。
+  - 假设用户在网站 A 的某一个页面上已经完成了登录操作，当在该网站的另一个页面上执行的操作需要验证用户登录的时候任然需要用户再次登录，因为 HTTP 并不知道你已经登录，它不会维持你的登录状态。 
+- Cookie
+  - 为了让服务器能够记住用户引入了 Cookie 机制。 
+  - 当用户访问站点的时候，站点会为该用户分配一个Cookie值，站点使用该Cookie值来标记用户，当用户浏览器接收到包含Cookie值的数据包后，会将Cookie的值取出，存放到浏览器中，随后浏览器会在发往该站点的数据包中自动的填充该Cookie值
+  - Cookie值的填充是浏览器的行为！！！ 
+  - ![1618737490974](HackerMeWeb.assets/1618737490974.png)
 
 
 
+#### DedeCMS 靶场
+
+- 启动 phpstudy
+- 配置：
+  - 环境 --> 数据库 --> 更多 --> MySQL5.7.26
+  - 首页 --> 套件 --> MySQL5.7.26 启动
+  - 网站 --> 管理 --> php版本 --> php5.2.17nts
+  - 环境 --> php --> 更多 --> php5.2.17nts
+  - 网站 --> 管理 --> 打开根目录（此时，弹出根目录对话框） --> 查看DedeCMS-V5.7-UTF8-SP1\docs\readme.txt ，将DedeCMS-V5.7-UTF8-SP1\uploads 整个文件全部放到根目录下
+- 访问
+  - http://127.0.0.1/uploads/install/index.php
+  - 我已经阅读并同意此协议  --> 继续  --> 继续  --> 在参数设置中 **初始化数据体验包**：不存在  --> 选中  **安装初始化数据进行体验**(体验数据将含带DedeCMS大部分功能的应用操作示例) ，点击远程获取  --> 此时就展示的是 [√] 存在(您可以选择安装进行体验)  
+  - 进入 phpstudy  --> 数据库 --> 鼠标悬停在密码上面，可以看到密码上 root
+  - 浏览器的参数设置页面中 --> 数据库设定 --> **数据库密码：** root  --> 管理员初始密码，用户名 admin，密码 admin，cookie 加密码：iUHIgK0xHbK4WGGhkHSsV1aItgSyq
+  - 点击继续，安装完成
+  - 访问网站首页：http://127.0.0.1/uploads/index.php?upcache=1
+  - 登录网站后台：http://127.0.0.1/uploads/dede/login.php?gotopage=%2Fuploads%2Fdede%2F
+    - 用户名 admin，密码 admin
 
 
 
+#### Cookie 测试
+
+- 启动 phpstudy，完成edeCMS 靶场设置，启动 BurpSuite，启动 Switchhost
+
+- 访问网址，http://xforburp.com/uploads/dede/ ，实现登录
+
+- 可以在 BurpSuite 中看到一堆请求信息，找到 POST 请求 /uploads/dede/login.php
+
+  - Request 在用户登录的数据包，请求体中包含登录账号的信息，用户名userid和密码pwd，`gotopage=%2Fuploads%2Fdede%2F&dopost=login&adminstyle=newdedecms&userid=admin&pwd=admin&validate=CRQI&sm1=`
+  - Response 在响应的数据包中，携带 Set-Cookie字段 
+  - 提交了用户名和密码登录后，在服务器返回的数据包中携带类的Set-Cookie字段，该字段就是为当前登录用户设置的Cookie的值， 
+  - ![1618739628399](HackerMeWeb.assets/1618739628399.png)
+
+- 浏览器中查看本地的 Cookie
+
+  - 打开控制台 --> 存储 --> Cookie  --> http://xforburp.com --> set-cookie字段
+  - 浏览器在接收到这些Cookie的值之后会将set-cookie字段的值存放到浏览器中 
+
+- 恶意请求测试
+
+  - 修改请求数据包的 Cookie 为管理员的 Cookie 
+
+    - 管理员的 Cookie
+
+    - ```http
+      Cookie: menuitems=1_1%2C2_1%2C3_1; security_level=0; PHPSESSID=3f7ff39e207cec93246559485fb732ac; DedeUserID=1; DedeUserID__ckMd5=2ee97fcbc26619dd; DedeLoginTime=1618739313; DedeLoginTime__ckMd5=92f0f7bcf3006251
+      ```
+
+  - 即使不输入密码也可以登录网站后台 
 
 
 
+#### CSRF
+
+- 数据包中 Cookie 的值是浏览器从本地存储中取出，并自动填充到数据包中。
+- 如果攻击者控制了用户浏览器并且窃取了cookie。
+- 浏览器会自动完成 Cookie 的填充，目标网站会误认为该数据包就是管理员发送的，会以管理员的权限进行相关的操作。 
+- 请求流程
+  - ![1618740021333](HackerMeWeb.assets/1618740021333.png)
+- 在 DedeCMS 后台管理页面，能够直接新建文件。
+  - 核心 --> 附件管理 --> 文件式管理器  --> 新建目录 --> 新建文件
 
 
 
+#### CSRF 测试
 
+- CSRF看上去危害并不大，这里将演示通过 CSRF完成 getshell 
+- 管理员在新建文件的时发送的数据包 ，POST /uploads/dede/file_manage_control.php
+- 那么如果我们能够控制登录了管理员账号的浏览器发送上面的数据包，并新建一个木马文件，就可以完成getshell 
+- 构造了下面的 POC 
+  - 示例代码：HackerMeCode\CSRF\POC.html
+- 在同一个浏览器中访问了恶意链接 
+  - 点击Submit request
+  - 此时就会创建一个 tf2.php 文件，在  phpstudy_pro\WWW\uploads\uploads\rmliu 下，如果没有rmliu文件夹，需要自己创建一下，或者修改 activepath 的 value 值
+- php 一句话木马测试
+  - 浏览器输入：http://xforburp.com/uploads/uploads/rmliu/tf2.php?cmd=phpinfo();
+  - 此时就可以展示出PHP版本信息，完成木马利用
+
+
+
+#### HTTP Referer 防御
+
+- CSRF 防御
+- 在进行 CSRF 测试的时候，会有一个 Referer: http://localhost:63342/ 请求字段
+  - ![1618742275689](HackerMeWeb.assets/1618742275689.png)
+- 站点可以对一些敏感操作限制其 Referer 字段的值，比如某站点转账的时候使用:
+  - http://bank.example/withdraw?account=bob&amount=1000000&for=Mallory
+  - 转账的操作一定是用户登录之后在本站点的页面上操作的，因为可以将 Referer 字段限制为只允许本站点。 
+
+
+
+#### Token 防御
+
+- CSRF 防御
+- CSRF 成功的原因在于站点对于用户身份的辨别依赖于 Cookie ，因此攻击者可以在不知道用户口令的情况下直接使用用户的 Cookie 来通过安全验证。
+- 在 HTTP 请求中以参数的形式加入一个随机产生的 Token，服务器接收到用户请求后会验证 Token，如果没有 Token 或者 Token 不正确都会被认为是攻击而直接丢弃。
+- GET 请求: http://url?csrftoken=tokenvalue
+- POST 请求: <input type="hidden" name="csrftoken" value="tokenvalue"/> 
+- Token-由 Web 应用程序添加到数据包中，Cookie-由浏览器添加到数据包，之所以会存在 CSRF 是因为浏览器会自动的将本地的 Cookie 添加到数据包，但是Token 浏览器是不知道，是由网站的应用程序添加到数据包中。 
+- 注意：
+  - 比如攻击者可以在网站发布自己服务器的地址，当普通用户点击了该地址后，由于该站点会在地址后面添加 Token，也就造成了 Token 的泄露。
+  - 站点对内链和外链进行区分，只在内链中添加 Token，对于外链就不添加 Token。 
+
+
+
+### 同源策略 
 
 
 
