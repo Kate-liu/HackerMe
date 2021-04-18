@@ -4806,25 +4806,72 @@ DOM 型 XSS 其实是一种特殊类型的反射型 XSS，通过 JS 操作 DOM �
 
 ### XSS 蠕虫
 
+#### 定义与原理
+
+- XSS 蠕虫定义
+  - XSS 蠕虫是一种跨站脚本病毒，大多使用 JavaScript 脚本编写，突破浏览器的安全限制，
+  - XSS 蠕虫基于社会工程学诱使用户点击访问其发出的恶意邀请链接在网站上感染访问网站的用户，受感染的用户发送含有蠕虫的内容，再感染安全的用户。 
+- XSS 蠕虫原理
+  - 基于存储型 XSS 漏洞，攻击者在 Web 页面植入恶意代码。
+  - 发送伪装的邀请链接。
+  - 用户点击链接被感染。
+  - 新感染的用户向好友发送伪装的邀请链接。 
+- XSS 蠕虫危害
+  - 这是一个传十，十传百的 传播方式， 感染效率极高，XSS蠕虫的感染速度是随Web应用程序的用户访问量几何数递增的
+  - xss蠕虫基于 xss， 所以xss 能利用的功能。蠕虫都能够利用，而且 由于xss蠕虫比存储型XSS漏洞更强的传播性，危害性 极大。 
+
+
+
+#### CSS （层叠样式表） 
+
+- 定义如何显示 HTML 元素 
+- 示例程序：HackerMeCode\CSS\CSSDemo.html
+
+
+
+#### AJAX
+
+- AJAX 是在不重新加载整个页面的情况下并更新部分网页的技术。当需要异步与服务器交换数据时，需要 XMLHttpRequest 对象来异步交换。
+- 启动 BWAPP 漏洞容器
+  - 浏览器输入：http://127.0.0.1/ajax/index.html 
+  - 在输入框中输入一个字母，就可以看到会有对应的匹配内容展示出来，就是使用的是 AJAX 技术
+  - 源码文件：HackerMeCode\AJAX\AJAXDemo.html
 
 
 
 
 
+#### Samy 蠕虫 
+
+- 当时年仅19岁的 Samy Kamkar 发起了对 MySpace.com （社交网站）的攻击，Samy Kamkar 的蠕虫病毒在20个小时被超过一百万人执行。在每个人的自我简介后边加了一句话：“but most of all, Samy is my hero.” 
+  - https://myspace.com/
+- Samy Kamkar成为全球第一个AJAX蠕虫的作者
+- 我们这节课讲解的这款蠕虫，在历史上有重要地位。
+- 2009年的Twitter蠕虫事件和2011年新浪微博蠕虫事件都沿袭了他当时的方法。
+- myspace 在当时是全球最大的的社交网站。相当于现在的facebook ，推特 ,他们的安全防护在当时自然也是极高的。 
 
 
 
+#### Samy 蠕虫源码分析
+
+- 示例程序：HackerMeCode\SamyWorm\SamyWormDemo.html
+- 代码原文，最大长度限制，必需紧凑的代码，含义不清的命名，函数高度复用相比代码优雅结构清晰， 这里可以理解编程的另一种极致， 想象力和精简的极致. 
+- Myspace 屏蔽了很多标志符。
+  - 事实上，他们只允许<a>,<img>类，和<div>类，或许还有其他一些（例如，`<embed>`类）。
+  - 他们不允许`<script>`类， `<boday>`类， onClinks, onAnythings, 带javascript的<href>类。
+  - 之前的 向百度请求了背景图片，请求是url形式执行，可使用伪协议执行javascript脚本。 但是当时某些浏览器（IE，部分Safari和其他）允许CSS标识符中带有javascript.
+  - 之前使用 alert是用于检测 xss, 实际xss攻击使用 eval
+  - `<div id=mycode style="BACKGROUND: url('java script:eval(document.all.mycode.expr)')" expr="var B=String.fromCharCode(34);    var A=String.fromCharCode(39);`
+    - 第一行 javascript 中的空格原本是换行符 \n ，用于绕过 对javascript 单词的检测。
+    - 第一行 由于单双引号已经被使用，直接编写脚本 非常困难，这里使用表达式来替代要 执行的脚本，后面所有脚本都在 expr属性里面。
+    - 第一行 由于myspace 禁止单双号转义， 10进制翻译成ASCII来生成引号， 34是 双引号， 39 单引号。
+  - `return eval('document.body.inne'+'rHTML')`
+    - 中间， myspace 禁止了 innerHTML ,用 eval函数和 字符串拼接 得到内部的文本。 
+  - 更加详细的源码分析，见示例程序。
 
 
 
-
-
-
-
-
-
-
-
+### XSS 编码混淆 
 
 
 
