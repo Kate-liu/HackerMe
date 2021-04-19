@@ -5143,27 +5143,84 @@ DOM 型 XSS 其实是一种特殊类型的反射型 XSS，通过 JS 操作 DOM �
 
 ### 点击劫持 
 
+#### iframe 标签
+
+- iframe 元素会创建包含另外一个文档的内联框架（即行内框架），简单来说就是在 HTML 页面中包含另外一个页面。 
+- 通过 iframe 标签在一个页面中嵌入了两个页面 
+- 示例程序：HackerMeCode\IFrame\IFrameDemo.html
+
+
+
+#### opacity
+
+- opacity 是 CSS 的一个属性，用来设置元素的透明度。 
+
+- 该属性的取值范围为0-1，默认情况下为1。 
+
+- ```html
+  {
+  	opacity:1;
+  }
+  ```
+
+- 在 iframe 的基础上，将第一个页面的 opacity 调整了为0.2后，可以看到透明度的变化。
+
+- 示例程序：HackerMeCode\IFrame\IFrameOpacityDemo.html
+
+
+
+#### z-index
+
+- z-index 是 CSS 的一个属性，用来指定一个元素的堆叠顺序。
+- 拥有更高堆叠顺序的元素总是会处于堆叠顺序较低的元素的前面。 
+- 示例程序：HackerMeCode\IFrame\ZIndexDemo.html
+  - 通过调整z-index的值，造成不同的显示效果
+  - 第一张截图文字的z-index为0，图片的z-index为-1
+  - 第二张截图文字的z-index为0，图片的z-index为1 
+  - ![1618806332782](HackerMeWeb.assets/1618806332782.png)
+
+
+
+#### 点击劫持定义
+
+- 点击劫持又名 UI- 覆盖攻击，因为该攻击会劫持用户的点击操作，所以被命名为点击劫持，这是一种视觉上的欺骗手段。
+- 主要劫持目标是含有重要会话交互的页面，如银行交易页面、后台管理页面等。 
+  - 就是一个按钮
+  - ![1618806431980](HackerMeWeb.assets/1618806431980.png)
+  - 示例程序：HackerMeCode\IFrame\ClickJackingDemo.html
+
+
+
+#### XSS to Clickjacking 
+
+- 在存在 XSS 漏洞的位置输入 payload 
+
+- ```sh
+  <iframe src="https://time.geekbang.org/course/intro/100055001?utm_campaign=guanwang&utm_source=baidu-ad&utm_medium=ppzqpc&utm_content=title&utm_term=baidu-ad-ppzq-title" style="opacity: 0.3;position:absolute;left:0px;top:150px;z-index:3;”
+  ></iframe>
+  ```
+
+- 当用户点击原页面的 Go 按钮后，实际点击的是内嵌页面的订阅按钮。
+
+- 为了能看到效果没有将透明度调整为0.3需要说明的是，这里只是举例，实际订阅是需要登录以及后面一系列操作的，这是只是为了演示劫持点击的效果 
+
+- ![1618806929460](HackerMeWeb.assets/1618806929460.png)
+
+- ![1618806958923](HackerMeWeb.assets/1618806958923.png)
+
+- 对于这里的使用get方式触发的反射型XSS可以构造下面的恶意链接，并诱导用户点击： 
+
+  - ![1618807046238](HackerMeWeb.assets/1618807046238.png)
+
+- 这里的链接看上去就不太正常，这里只是为了起到说明作用，可以使用工具对URL进行伪装URL伪装工具
+
+  - 在线短链接生成器：http://tool.chinaz.com/tools/dwz.aspx 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+### HTML5 新标签 
 
 
 
