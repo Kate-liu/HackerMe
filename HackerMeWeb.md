@@ -5330,31 +5330,133 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 ### XSS 与模版注入 
 
+#### JavaScript
+
+- 作为前端开发语言：一般关联前端安全问题，如 XSS,CSRF, JS 劫持。
+- 受害者主体：浏览网站的用户
+- 作为后端开发语言：运行于 Node.js，关联后端问题，注入及远程命令执行
+- 受害者主体：服务器网站 
 
 
 
+#### Node.js
+
+- Node.js 允许你在浏览器之外运行 JavaScript。由于 Node.js 具有精简，快速和跨平台的特性， 所以它可以通过统一堆栈来大大简化项目。
+- 虽然 Node.js 不是Web 服务器，但它允许服务器（可以用 JavaScript 编程的东西）存在于实际 Web客户端之外的环境中。
+- 随着 Node.js 越来越流行，它的安全问题是黑客与安全研究人员的焦点。 
+- Node.js 是一个基于 Chrome V8 引擎的 JavaScript 运行环境。 Node.js 使用了一个事件驱动、非阻塞式 I/O 的模型。
+- Node 是一个让 JavaScript 运行在服务端的开发平台，它让 JavaScript 成为与 PHP、Python、Perl、Ruby 等服务端语言平起平坐的脚本语言。 
 
 
 
+#### 模版引擎
+
+- 模板引擎可以让（网站）程序实现界面与数据分离，业务代码与逻辑代码的分离，这大大提升了开发效率，良好的设计也使得代码重用变得更加容易。 
 
 
 
+#### Pug 模版引擎
+
+- Pug 是一款健壮、灵活、功能丰富的 HTML 模板引擎,专门为 Node.js 平台开发。Pug是由 Jade 改名而来。
+- Pug 通过缩进（表示标签间的嵌套关系）的方式来编写代码的过程，在编译的过程中，不需要考虑标签是否闭合的问题。 
 
 
 
+#### Pug 模版引擎示例 
+
+- 安装 pug
+  - 打开 终端，输入 npm install -g pug-cli ，前提是安装了 npm
+  - 然后就等着安装完成即可
+- pug 模板
+  - 示例程序：HackerMeCode\PUG\PUG.pug
+- 渲染为 html
+  - 如果在 Webstorm 中写 pug，会默认直接渲染出来，只需要点击就可以在浏览器中显示出来
+  - 否则的话，需要打开 终端 ，输入命令：pug -P -w .\pug.pug ，w表示实时监控文件，并渲染内容
+  - ![1618823581427](HackerMeWeb.assets/1618823581427.png)
+  - 执行 pug 命令。能够生成 html 文件，-w 提供实时监控，当 pug 文件改变时，html 同时改变。
+  - 模版引擎 便于数据与代码分离， 提供了转义功能。天生具有对 XSS 的防御效果。但是实际上产生了另一种问题。模版注入。 
+- 渲染后的html文件内容为：HackerMeCode\PUG\PUG.html
+  - 双击在浏览器打开，就弹出了对话框，内容为2
 
 
 
+#### 模板注入
+
+- 服务端接受用户的输入，并将其作为 Web 应用模板的一部分，即允许修改底层模板，在渲染过程中模板引擎执行用户插入的恶意内容。
+- 这可以在 wiki，WSYWIG 或电子邮件模板中恶意使用。这种情况很少发生在无意中，所以它经常被误解为只是 XSS。 
 
 
 
+#### Pug XSS 测试
+
+- 靶机安装
+  - docker pull registry.cn-shanghai.aliyuncs.com/yhskc/chatsys:latest
+  - docker run --name=pug -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/chatsys 
+- 浏览器访问：http://127.0.0.1/
+- 进入 pug xss 攻击
+  - http://127.0.0.1/xss
+  - 下载 xss 源码文件
+    - 在 XSS 中，点击 Pug XSS template，就可以将模板的源文件下载下来，示例文件：HackerMeCode\PUG\templateExample.pug
+  - Exercise 1：**Escaped String Interpolation**
+    - 输入：<script>alert(1);</script>
+    - 点击 submit 后点开Exercise 1，可以看到 No results found for <script>alert(1);</script>
+    - 此时的 输入被 pug 进行了转义操作
+    - 查看源码，可以看到 `\#{name1}`
+  - Exercise 2：**Unescaped String Interpolation**
+    - 输入：<script>alert(1);</script>
+    - 点击 submit 后，会弹出内容为1的对话框
+    - 查看源码，可以看到 `! {name2}`
+  - Exercise 3：**Escaped String Interpolation into dynamic inline Javascript**
+    - 输入：1;alert(123);
+    - 点击 submit 后，会弹出内容为123的对话框，点开Exercise 3，可以看到 No results found for 1;alert(123);
+    - 查看源码，可以看到 `var user3 = \#{name3};`
 
 
 
+#### Pug 模版注入 
+
+- 安装并启动漏洞容器，并且启动 BurpSuite，Switchhost，访问：http://xforburp.com/
+- 登录 login
+  - username:123
+  - password:123
+- 进入 directmessage SSRF
+  - http://xforburp.com/directmessage
+  - 输入内容并测试：
+    - Send message to user: <script>alert(1);</script>
+    - Comment:123
+    - Link:1234
+    - 在BurpSuite中，打开 Intercept is on，点击 Send
+    - 可以在 BurpSuite 中看一个请求信息，如下所示，点击 Forward 后，继续发送请求包。
+      - 备注：按照道理说，是不会触发 XSS 的，但是目前竟然触发了XSS ，并且有一个弹框，内容为1
+      - 并且每一次测试，之后都是需要重新登录的
+    - ![1618829624306](HackerMeWeb.assets/1618829624306.png)
+  - 使用 8*8 测试
+    - Send message to user: 8*8，其他随便填写
+    - 此时发送的请求包为：
+      - ![1618829875681](HackerMeWeb.assets/1618829875681.png)
+    - 收到的响应包为：
+      - ![1618829890194](HackerMeWeb.assets/1618829890194.png)
+    - 可以思考内部的逻辑可能是 p Message has been sent to !{user} 
+  - 使用 %0a%3d8*8 测试
+    - Send message to user: %0a%3d8*8，其他随便填写
+      - 备注：这个时候，需要自己随便输入一个数字，借助 BurpSuite 进行请求参数的更换
+    - 此时发送的请求包为：
+      - ![1618830076583](HackerMeWeb.assets/1618830076583.png)
+    - 收到的响应包为：
+      - ![1618830132095](HackerMeWeb.assets/1618830132095.png)
+    - %0a --> 实现了换行操作；%3d --> 实现了一个等号 =；进而导致后面的 8*8 进行了运算，得到 64
+    - 类似于
+      - p Message has bee sent to username 
+      - p Message has bee sent to
+        =8*8 
+  - 内部实现 
+    - docker exec -it pug bash
+    - cd /opt/web/chatSupportSystems/views
+    - vim directmessage.pug
 
 
 
-
+### JavaScript 与 RCE 
 
 
 
