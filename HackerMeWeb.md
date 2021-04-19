@@ -5222,6 +5222,144 @@ DOM 型 XSS 其实是一种特殊类型的反射型 XSS，通过 JS 操作 DOM �
 
 ### HTML5 新标签 
 
+#### HTML5 
+
+HTML5 赋予网页更好的意义和结构。新的 HTML 标签像 <header>, <footer>，<nav>，<section>， <aside> 等等，使得阅读者更加容易去访问内容。 
+
+HTML5 中最酷的特性就是本地存储。有一点像比较老的技术 Cookie 和客户端数据库的融合。它比 Cookie 更好用因为支持多个 Windows 存储，它拥有更好的安全和性能，即使浏览器关闭后也可以保存。 
+
+HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏览器中呈现更好的视觉效果。 
+
+
+
+#### SVG
+
+- SVG（Scalable Vector Graphics）意为可缩放矢量图形，这是一种使用 XML 格式定义图像的方式。 
+- SVG 文件实例 ：HackerMeCode\HTML5\SVGExample.svg
+- SVG 中的 JS ：HackerMeCode\HTML5\SVGJSExample.svg
+  - 当访问上面的 SVG 文件定义的图片时 ，弹出一个对话框
+
+
+
+#### Web Storage
+
+- Web Storage 包含两个部分，一部分是 sessionStorage，另一部分是 localStorage。
+  - sessionStorage：用于本地存储一个会话（session）中的数据，这些数据只有在同一个会话中的页面才能访问并且当会话结束后数据也随之销毁。
+  - localStorage： 用户持久化的本地存储，除非主动删除数据，否则数据是永远不会过期的。
+- 新的 HTML5 Web 存储 API 使 Web 开发人员可以在用户的计算机上存储大约 5 兆字节的数据（而 Cookie 中仅允许 4KB 的数据）。 
+
+
+
+#### SVG 与文件上传漏洞
+
+- 首先，构建一个 SVG 文件，示例程序：HackerMeCode\HTML5\SVGUploadExample.svg
+- 启动 bWAPP 靶机，安装，Choose your bug: Unrestricted File Upload
+- 浏览，上传文件：SVGUploadExample.svg，点击 upload
+- 浏览器输入网址查看，http://127.0.0.1/images/SVGUploadExample.svg
+  - 备注：需要使用 Google Chrome 浏览器
+  - 输入用户名和密码之后，就可以看到网址跳转到 example.com 中
+- 漏洞利用过程分析
+  - ![1618818207352](HackerMeWeb.assets/1618818207352.png)
+
+
+
+#### 本地存储 
+
+- 构建本地存储HTML 文件，示例程序：HackerMeCode\HTML5\SVGUploadStorageExample.html
+- 使用浏览器打开文件，再打开控制台
+- 可以在控制台存储中，选择本地存储，看到对应的 key-value 内容
+- ![1618818857801](HackerMeWeb.assets/1618818857801.png)
+- 通过SVG，盗取本地存储 
+  - 构建svg文件，示例程序：HackerMeCode\HTML5\SVGRECTExample.svg
+  - 接着重新加载 SVGUploadStorageExample.html 到浏览器
+  - 接着在同一个浏览器中打开 SVGRECTExample.svg 文件，打开控制台，就可以在 Console 中看到对应的输出
+  - ![1618819449483](HackerMeWeb.assets/1618819449483.png)
+  - 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
