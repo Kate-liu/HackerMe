@@ -5551,21 +5551,67 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 ### 从 XSS 到 RCE 
 
+#### WordPress
+
+一款内容管理系统软件（CMS），它是使用 PHP 语言和 MySQL 数据库开发的, 用户可以轻松构建属于自己的网站。根据它的下载量估算，超过33%的互联网网站使用 WordPress。 
+
+
+
+#### CVE-2019-9887
+
+2019年3月，一家从事开发静态代码分析软件的公司，公布了一个 CSRF 漏洞（后变更为 XSS 漏洞），影响了低于5.1.1的多个版本的 WordPress,且在默认配置。
+
+漏洞是源于2009年的防御机制设计失误。 
+
+
+
+#### WordPress 之 Nonce 安全机制 
+
+- Nonce 是加密散列，用来验证是否是正确的人或客户端所发送的请求。因为Nonce 是由字母与数字结合的hash值构成，（例如 md5，sha1，sha2），是WordPress 中的 token,安全令牌，一般来说不太可能创建一个假的 Nonce。 
+  - ![1618887087280](HackerMeWeb.assets/1618887087280.png)
+- wp-includes/pluggable.php 
+  - WordPress Nonce 是 WordPress 2.5版本引入的，它可以在某段时间内一直有效，这里默认一天。
+  - 从技术上讲 WordPress Nonce 可以使用不止一次，但仅限这个定义的时间段里。不能抵御重放攻击。
+  - 而且与 \$i 是由时间决定的随机数，每天的 0 时与 12 时更新一次；\$action 是操作；​\$uid 是用户 ID；​\$token是用户登陆时服务器产生的，每次登陆都不同。 
+  - ![1618887210885](HackerMeWeb.assets/1618887210885.png)
+- 为什么使用 Nonce 
+  - http://example.com/wp-admin/post.php?post=123&action=trash
+  - `<img src="http://example.com/wp-admin/post.php?post=123&action=trash" />`
+  - http://example.com/wp-admin/post.php?post=123&action=trash&_wpnonce=b192fc4204 
+  - 只有请求中的_wpnonce 与预期的相等，该请求才会被处理，URL 就很难被伪造。 
+- 漏洞根源 
+  - /wp-admin/edit.php 
+  - /wp-includes/pluggable.php 
+  - ![1618887359765](HackerMeWeb.assets/1618887359765.png)
+  - ![1618887418837](HackerMeWeb.assets/1618887418837.png)
+  - 当我们在后台编辑文章的时候会执行该段代码，进入 check_admin_referer 
+  - /wp-includes/comment.php 
+  - /wp-includes/kses.php 
+  - ![1618887465820](HackerMeWeb.assets/1618887465820.png)
+  - WordPress 在处理高权限用户的评论的时候，并不会进行过滤即便是<script>脚本。
+  - 在 WordPress Core 开发团队的认知中，任何一个 WordPress 的超级管理员，都应该保管好自己的网站以及账号安全，超级管理员也应该能对自己的网站以及服务器负责。在这样的观点设计下，WordPress 的超级管理员可以直接修改后台插件模板来 GetShell，超级管理员的评论不会有任何过滤。
+  - 但是在处理 Nonce 机制的时候有点问题。
+  - 高权限用户若 Nonce 验证通过，则不限制输入，如过 Nonce 验证不通过，则进行wp_filter_post_kses 过滤。代码如上所示。 
+  - /wp-includes/kses.php 
+  - ![1618887662005](HackerMeWeb.assets/1618887662005.png)
+  - ![1618887713388](HackerMeWeb.assets/1618887713388.png)
+  - 他们都仅仅允许基础的 HTML 标签和属性，虽然 wp_filter_post_kses 稍微宽松一点，但是也移除了能够导致跨站脚本攻击的标签。 
+  - wp-includes/formatting.php 
+  - ![1618887798769](HackerMeWeb.assets/1618887798769.png)
+  - 原文本：
+    - <a title='Xss " onmouseover=alert(1) id=" ' rel='111'>please click me 
+  - 处理后（单引号变成了双引号）： 
+    - <a title="Xss" onmouseover =alert(1) id=" " rel='111'>please click me 
+- CSRF->XSS->RCE 攻击链 
+  - ![1618887857999](HackerMeWeb.assets/1618887857999.png)
+
+
+
 #### 安装 xsstorce  容器
 
 - docker pull registry.cn-shanghai.aliyuncs.com/yhskc/xsstorce:latest
 - docker run --name=xsstorce -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/xsstorce:latest
 - docker ps
-
-
-
-
-
-
-
-
-
-
 
 
 
