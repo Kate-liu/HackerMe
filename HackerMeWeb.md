@@ -5389,7 +5389,7 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 #### Pug XSS 测试
 
-- 靶机安装
+- pug 靶机安装
   - docker pull registry.cn-shanghai.aliyuncs.com/yhskc/chatsys:latest
   - docker run --name=pug -d -p 0.0.0.0:80:80 registry.cn-shanghai.aliyuncs.com/yhskc/chatsys 
 - 浏览器访问：http://127.0.0.1/
@@ -5697,17 +5697,62 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 ### SSRF 
 
+#### SSRF 定义
+
+- SSRF（Server-Side Request Forgery）服务器请求伪造，是一种由攻击者构造请求，由服务端发起请求的安全漏洞。 
+  - ![1618893936646](HackerMeWeb.assets/1618893936646.png)
+- 特点：
+  - 攻击者机器无法直接访问目标机器2的服务
+  - 目标机器1能够访问目标机器2的服务
+  - 目标机器1暴露了访问目标机器2的方式，黑客能够利用
+  - ![1618894073642](HackerMeWeb.assets/1618894073642.png)
+- 危害:
+  - 敏感信息泄露
+  - 攻击内网主机、应用
+  - 被作为一个跳板持续进行攻击 
+
+
+
+#### SSRF 测试
+
+- 安装pug靶机，docker pull registry.cn-shanghai.aliyuncs.com/yhskc/chatsys:latest
+- 启动 BurpSuite，SwitchHost
+- 访问测试：
+  - http://127.0.0.1/
+- 登录，123/123，访问 SSRF，Direct Message link，http://127.0.0.1/directmessage
+- 输入内容：
+  - Send message to user: 111
+  - Comment:222
+  - Link:  https://www.baidu.com/
+  - 点击 Preview link，可以看到页面显示了 百度 的首页，但是浏览器并不只是直接访问获得的，而是使用了 SSRF 获得的
+- 测试访问本站
+  - Link：http://xforburp.com/ssrf?user=test01&comment=001&link=http://127.0.0.1:80
+  - 可以看到能够访问本站
+- 使用 BurpSuite 的 Intruder 测试端口
+  - 选择请求为 GET /ssrf?user=test01&comment=001&link=http://127.0.0.1:80 HTTP/1.1 的包，右键 Send to Intruder 
+  - 在 Positions 中，只保留 端口 80，如：GET /ssrf?user=test01&comment=001&link=http://127.0.0.1:§80§ HTTP/1.1
+  - 在 Payload Sets 中，
+    - 选择 Payload type：Numbers
+    - Number range：From: 28000 -- 28100
+  - 开始攻击，Start attack
+  - 在弹出框中，可以看到 端口 为 28017 的时候，返回内容的长度 和其他的不一样
+- 测试 28017 端口
+  - Link：http://xforburp.com/ssrf?user=test01&comment=001&link=http://127.0.0.1:28017
+    - 可以看到  mongod  的相关信息
+  - Link：http://xforburp.com/ssrf?user=test01&comment=001&link=http://127.0.0.1:28017/_commands
+    - 看到 **MongoDB** 的命令列表
+  - Link：http://xforburp.com/ssrf?user=test01&comment=001&link=http://127.0.0.1:28017/serverStatus
+    - 查看服务器的状态信息
+  - Link：http://xforburp.com:28017/
+    - 直接使用端口访问，是无法访问的
 
 
 
 
 
+## 容器安全
 
-
-
-
-
-
+### Apache安全 
 
 
 
