@@ -6259,57 +6259,144 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 #### 魔术方法 
 
+- `__construct()， __destruct()， __call()， __callStatic()， __get()， __set()
+  ， __isset()， __unset()， __sleep()， __wakeup()， __toString()， __invo
+  ke()， __set_state()， __clone() 和 __debugInfo()` 等方法在 PHP 中被称为魔术方法（Magic methods）。
+- 在命名自己的类方法时不能使用这些方法名，除非是想使用其魔术功能。 
+
+
+
+#### 函数黑魔法
+
+- php 读取文件其实是读取数据流
+  - `php://input` 可以访问原始请求数据中的只读流
+  - 这里令`$a = "php://input"` ，并在请求主题中提交字符串
+- eregi() 截断漏洞
+  - ereg() 函数 或eregi() 函数  存在空字符截断漏洞，即参数中的正则表达式或待匹配字符串遇到空字符则截断丢弃后面的数据
+- 弱比较
+  - 若字符串以数字开头，则取开头数字作为转换结果，若无则输出 0
+- md5()，sha1()
+  - md5() 是不能处理数组的，md5(数组) 会返回null，两个null 相等绕过 sha1() 也是同理
+- 转换
+  - PHP 会自动进行转换，比如 16 进制，科学计数法等，有时也用这点绕过
+- intval()
+  - intval() 转换的时候，会将 从字符串的开始进行转换直到遇到一个非数字的字符。即使出现无法转换的字符串，intval() 不会报错而是返回0.
+- strcmp()
+  - strcmp() 函数只有在相等的情况下返回0。
+  - 那么我们传入一个数组，他会返回 null，而判断使用了 \==，而null\==0 是 bool(true)，这样就成功绕过
+- ereg()
+  - 字符串对比解析，ereg 函数存在 null 截断漏洞，当 ereg 读取字符串 string 时，如果遇到了 %00，后面的字符串就不会被解析
+  - 注意：这里的 %00 是需要 urldecode 才可以截断的，这是 url 终止符，且 %00 长度是 1 不是 3
+- is_numeric()
+  - 当两个 is_numeric 判断并且 and 连接时，and 后面的 is_numeric 可以绕过
+  - 16进制也可以绕过 is_numeric 检验，可以用来绕过 sql 注入里的过滤
+  - 例如，将 '1 or 1' 转换为 16 进制形式，再传参，就可以造成 SQL 注入
+- switch()
+  - 当 switch 没有 break 时，可以继续往下执行
+  - 这里也有自动转换，比如 $switch_bug = a 会当0执行，=1a，会当1执行
+- array_search()
+  - 用到了 PHP 弱类型的一个特性，当一个整形和一个其他类型进行比较的时候，会先把其他类型 intval 再比
+  - 当检索中带入字符串，比如 “sky”，会 intval('sky') == 0，从而致使数组数组也可以查询成功
+- 弱类型比较 之 松散比较 ==
+  - https://www.php.net/manual/zh/types.comparisons.php
+  - "php" == 0 => true
+  - ![1618979693512](HackerMeWeb.assets/1618979693512.png)
+- 协议流
+  - 为了读取包含有敏感信息的 PHP 等源文件，我们就要先将可能引发冲突的 PHP 代码 编码一遍，这里就会用到 php://filter
+  - php://filter 是 PHP 语言中特有的协议流
+  - 作用是作为一个 中间流 来处理其他流，比如我们可以用如下一行代码将 POST 内容转换成 base64 编码并输出
+    - `readfiel("php://filte/read=convert.base64/resource=php://input");`
+  - 所以，在 XXE 中，我们也可以将 PHP 等容易引发冲突的文件流用 php://filter 协议列处理一遍，这样就能有效规避特殊字符造成混乱
+    - `php://filter/read=convert.base64/resource=./xxe.php`
+
+
+
+#### 面向对象 
+
+![1618991818550](HackerMeWeb.assets/1618991818550.png)
+
+
+
+#### 序列化与反序列化 
+
+- Serilize
+- Deserilize
+
+![1618991857548](HackerMeWeb.assets/1618991857548.png)
+
+
+
+#### 4个常见魔术方法
+
+- `__construct()`：类的构造方法，对象在创建的过程中自动调用。
+- `__destruct()`：类的析构方法，对象在销毁的过程中自动调用。
+- `__call()` : 当程序调用不存在的方法时，`__call()`用于避免程序意外终止。
+- `__wakeup() `：执行反序列化时，会先调用这个函数。 
+
+
+
+##### \__construct() __destruct 
+
+- 示例程序：HackerMeCode\PHP\Person1.php
+- 执行：php Person1.php
+
+
+
+##### \__call() 
+
+- 示例程序：HackerMeCode\PHP\Person2.php
+- 执行：php Person2.php
+
+
+
+##### 序列化 
+
+- 示例程序：HackerMeCode\PHP\Person3.php
+- 执行：php Person3.php
 
 
 
 
 
+##### 反序列化与\__wakeup() 
+
+- 示例程序：HackerMeCode\PHP\Person4.php
+- 执行：php Person4.php
+- __wakeup() 的目的是重建在序列化中可能丢失的任何数据库连接以及处理其它重新初始化的任务。 
 
 
 
+#### 反序列化漏洞（XSS） 
+
+- 使用谜团靶机，搜索 bwapp，创建，打开，弹出新 Tab 
+- 初始化，http://70772b1ac6f44673aa83ca1ee837e161.app.mituan.zone/install.php，点击 here
+- 创建新用户，123/123
+- 登录用户，选择 bug，Unrestricted File Upload
+- 上传文件，示例程序 ，HackerMeCode\PHP\wakeup1.php
+- 访问文件，弹出对话框，内容为 1，http://70772b1ac6f44673aa83ca1ee837e161.app.mituan.zone/images/wakeup1.php
 
 
 
+#### 反序列化漏洞（代码执行） CVE-2016-7124 
+
+- 直接查看方式
+  - 使用谜团靶机，搜索 bwapp，创建，打开，弹出新 Tab 
+  - 初始化，http://70772b1ac6f44673aa83ca1ee837e161.app.mituan.zone/install.php，点击 here
+  - 创建新用户，123/123，登录用户
+  - 直接查看漏洞，http://70772b1ac6f44673aa83ca1ee837e161.app.mituan.zone/cve.php
+    - 此时就会出现 phpinfo 的内容
+- 上传脚本文件方式
+  - 示例程序文件：HackerMeCode\PHP\cve.php
+  - 此时漏洞执行访问，
+    - http://127.0.0.1/cve.php 或者
+    - http://127.0.0.1/escape.php （需要进入容器中，进行该文件的权限设置，命令chmod 777 escape.php）
+- 更改序列化内容长度测试
+  - 示例程序文件：HackerMeCode\PHP\cve1.php
+  - 此时是无法进行代码执行漏洞测试的，反序列化的时候会报错
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#### 安全编码总则
 
 
 
