@@ -6411,7 +6411,9 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 
 
-#### 文件系统安全 
+#### 安全编码准则
+
+##### 文件系统安全 
 
 - 删除指定的文件
   - 示例程序：HackerMeCode\PHP\FileSystem\DeleteFile.php
@@ -6432,7 +6434,7 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 
 
-#### 数据库安全
+##### 数据库安全
 
 - 恶意输入
 
@@ -6489,7 +6491,7 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 
 
-#### 命令执行安全
+##### 命令执行安全
 
 - 如果命令执行不可缺少，使用白名单的形式，并且硬编码进制拼接
 
@@ -6513,7 +6515,7 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 
 
-#### XSS 安全
+##### XSS 安全
 
 ```php
 <?php
@@ -6529,7 +6531,7 @@ $this->securityUtil->purifier($_GET["data"]);
 
 
 
-#### 资源泄露安全
+##### 资源泄露安全
 
 ```php
 <?php
@@ -6542,7 +6544,7 @@ fclose($file);
 
 
 
-#### 本地文件包含安全 
+##### 本地文件包含安全 
 
 - 当必须要接受外部文件名的时候，同样使用白名单更好
 
@@ -6566,7 +6568,7 @@ switch ($filename) {
 
 
 
-#### 任意文件上传安全
+##### 任意文件上传安全
 
 ```php
 <?php
@@ -6591,29 +6593,63 @@ if ($data['flag'] !== true) {
 
 ### Java Web安全 
 
+#### 初代 MVC 架构示意 
+
+![1618999578875](HackerMeWeb.assets/1618999578875.png)
 
 
 
+#### Java Web 发展历程
+
+![1618999607703](HackerMeWeb.assets/1618999607703.png)
 
 
 
+#### Java Web Application 
+
+##### Servlet 
+
+- docekr 安装 tomcat2，registry.cn-shanghai.aliyuncs.com/yhskc/tomcat02:latest 
+- docker exec -it tomcat02 bash
+- cd /usr/local/tomcat/webapps
+  - more HelloWorld.java
+  - ![1618999968373](HackerMeWeb.assets/1618999968373.png)
+- cd /usr/local/tomcat/webapps/ROOT/WEB-INF
+  - more web.xml
+  - ![1619000239845](HackerMeWeb.assets/1619000239845.png)
 
 
 
+##### Jsp 
+
+- cd /usr/local/tomcat/webapps/ROOT
+- more index.jsp
+- http://127.0.0.1:8080/index.jsp
+- 上传 shell.jsp 脚本
+  - 示例程序：HackerMeCode\JavaWeb\shell.jsp
+  - ![1619000727788](HackerMeWeb.assets/1619000727788.png)
+
+##### Spring MVC 
+
+- 重点是 DispatcherServlet
+
+![1619000755460](HackerMeWeb.assets/1619000755460.png)
 
 
 
+##### Servlet 继承关系 
+
+![1619001135844](HackerMeWeb.assets/1619001135844.png)
 
 
 
+##### Spring Microservices 
+
+![1619001170156](HackerMeWeb.assets/1619001170156.png)
 
 
 
-
-
-
-
-
+#### 代码审计 
 
 
 
