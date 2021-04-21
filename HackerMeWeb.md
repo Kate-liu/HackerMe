@@ -6396,7 +6396,380 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 
 
-#### 安全编码总则
+#### 安全编码要求
+
+- 总则
+  - 绝对安全的系统是不存在的。
+  - 最好的安全机制应该能在不防碍用户，并且不过多地增加开发难度的情况下做到能满足需求。
+  - 木桶原理，一个系统的的强度是由它最薄弱的环节决定的， 
+- 细则
+  - 所有输入的数据都是有害的（直接或者间接由用户输入的）
+  - 不依赖运行环境的安全配置
+  - 安全控制措施落实在最后执行阶段
+  - 最小化
+  - 失败终止 
+
+
+
+#### 文件系统安全 
+
+- 删除指定的文件
+  - 示例程序：HackerMeCode\PHP\FileSystem\DeleteFile.php
+  - 但使用下面的内容时候，此时就会删掉整个 passwd 文件
+    - user_submitted_name="../etc"
+    - user_submitted_filename="passwd" 
+- 删除硬盘中文件
+  - 示例程序：HackerMeCode\PHP\FileSystem\DeleteDiskFile.php
+  - 思考：../etc 这样的一个用户名 
+- 正则匹配文件
+  - 示例程序：HackerMeCode\PHP\FileSystem\PregFile.php
+  - `（：？` 非捕获分组，仅仅匹配
+  - `（？！\.）` 匹配非 . 的内容
+  - ../etc在上述正则会导致 die，即 .. 开头的文件不允许
+  - / 符号会导致 die。
+  - 根据操作系统的不同，存在着各种各样需要注意的文件，包括联系到系统的设置（/dev/或者COM1）、配置文件（/etc/文件和.ini文件）、常用的存储区域（/home/或者My Documents）等等。
+  - 由于此原因，建立一个策略禁止所有权限而只开放明确允许的 通常更容易些。
+
+
+
+#### 数据库安全
+
+- 恶意输入
+
+  - 尽量避免直接的数据库查询语句的拼接，无论数据库种类。 
+
+  - ```php
+    <?php
+    $query = "SELECT * FROM products WHERE id LIKE '%$prod%'";
+    $result = mssql_query($query);
+    ?>
+    
+    当$prod ==> a%' exec master..xp_cmdshell 'net user test testpass /ADD' -- 时候，新的PHP代码如下：
+    
+    
+    <?php
+    $query = "SELECT * FROM products WHERE id LIKE '%a%' 
+              exec master..xp_cmdshell 'net user test testpass /ADD' --%'";
+    $result = mssqL_query($query);
+    
+    ?>
+    
+    ```
+
+- 错误输出
+
+  - 尽量避免直接输出原本的数据库错误信息，而自行构造。 
+
+  - ```php
+    <?php
+    $sql = "SELECT * FROM movies WHERE title LIKE'%" . sqli($title) . "%'";
+    
+    $recordset = mysql_query($sql, $link);
+    if (!$recordset) {
+        die("Error:查询失败");
+    }
+    
+    ?>
+    ```
+
+- 在使用数据库时候，对于敏感信息加密存储：
+
+  - ```sh
+    md5($pass)
+    md5($salt.md5($pass))
+    SHA-1
+    SHA-2(SHA-224，SHA-256，SHA-384和SHA-512)
+    ```
+
+- 推荐使用：
+
+  - ```sh
+     md5($salt.md5($pass)) 与 SHA-256 
+    ```
+
+
+
+#### 命令执行安全
+
+- 如果命令执行不可缺少，使用白名单的形式，并且硬编码进制拼接
+
+- ```php
+  <?php
+  $targetUrl = $_POST ["target"];
+  
+  switch ($targetUrl) {
+      case "www.target.com":
+          echo "" . shell_exec("nslookup www.target.com");
+          break;
+      case "web.target.com":
+          echo "" . shell_exec("nslookup web.target.com");
+          break;
+      default:
+          echo "" . shell_exec("nslookup www.target.com");
+  }
+  
+  ?>
+  ```
+
+
+
+#### XSS 安全
+
+```php
+<?php
+// 用户可控数据不需存储直接响应的，硬编码输出。
+echo $this->securityUtil->encodeForHTML($data);
+echo $this->securityUtil->encodeForJavaScript($data);
+
+// 用户可控数据需存储响应,应过滤危险字符。
+$this->securityUtil->purifier($_GET["data"]);
+
+?>
+```
+
+
+
+#### 资源泄露安全
+
+```php
+<?php
+
+$file = fopen("temp.txt", "w") or die("Unable to open file!");
+fclose($file);
+
+?>
+```
+
+
+
+#### 本地文件包含安全 
+
+- 当必须要接受外部文件名的时候，同样使用白名单更好
+
+```php
+<?php
+
+$filename = $_GET["filename"];
+switch ($filename) {
+    case "file.txt" :
+        include("./file.txt");
+        break;
+    case "file.php" :
+        include("./file.php");
+        break;
+    default:
+        include("./ readme.txt");
+}
+
+?>
+```
+
+
+
+#### 任意文件上传安全
+
+```php
+<?php
+
+$config = array('limit' => 5 * 1024 * 1024,  // 允许上传的文件最大大小
+    'type' => array(                         // 允许的上传文件后缀及MIME
+        "gif" => "image/gif",
+        "jpg" => " image/jpeg",
+        "png" => " image/png")
+);
+
+$file = $_FILES ["file"];
+$data = $this->securityUtil->verifyuploadFile($file, $config);
+if ($data['flag'] !== true) {
+    return;  // 上传失败
+}
+
+?>
+```
+
+
+
+### Java Web安全 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
