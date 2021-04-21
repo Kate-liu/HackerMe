@@ -6143,25 +6143,121 @@ HTML 添加了基于 SVG、Canvas、WebGL 及 CSS3 的 3D 功能，可以在浏�
 
 ### PHP 安全 
 
+#### 超全局变量
+
+- PHP 中的许多预定义变量都是“超全局的”，这意味着它们在一个脚本的全部作用域中都可用。
+- 在函数或方法中无需执行 global $variable; 就可以访问它们：
+  - `$GLOBALS，$_SERVER，$_GET，$_POST，$_FILES，$_COOKI，$_SESSION，$_REQUEST
+    $_ENV`
+  - 它们受到 variables_order 变量的控制。 
 
 
 
+#### php.ini
+
+- 配置文件（php.ini）在 PHP 启动时被读取。
+- 对于服务器模块版本的 PHP，仅在 Web 服务器启动时读取一次。
+- cli（命令行）每次使用重新读取。
+- php.ini 内部 variables_order 参数控制着超全局变量。 
+- 查看服务器中的 php.ini 文件
+  - find / -name "php.ini"
+  - ![1618973304125](HackerMeWeb.assets/1618973304125.png)
+  - ![1618973414495](HackerMeWeb.assets/1618973414495.png)
 
 
 
+#### $_SERVER 
+
+- PHP 环境变量允许开发者的脚本从服务器动态收集某些类型的数据。 
+- 保证 PHP 程序在不同服务器正确运行。例如 DOCUMENT_ROOT , CONTEXT_DOCUMENT_ROOT变量将自动获得网站的根目录，而无需在脚本中进行任何更改。 
+- 输出示例：
+  - 示例程序：HackerMeCode\PHP\t2.php
+  - 借助于 bwapp 漏洞容器，选择  Unrestricted File Upload，上传 t2.php 文件
+  - 打开网址，http://127.0.0.1/images/t2.php，就可以看到对应的输出信息
+  - ![1618973787671](HackerMeWeb.assets/1618973787671.png)
 
 
 
+#### phpinfo()
+
+- 输出 PHP 当前状态的大量信息，包含了 PHP 编译选项、启用的扩展、PHP 版本、服务器信息和环境变量（如果编译为一个模块的话）、PHP 环境变量、操作系统版本信息、path 变量、配置选项的本地值和主值、HTTP 头和 PHP 授权信息（License）。从 php.ini 配置获取。
+- 常常关联着敏感信息泄露的问题。 
 
 
 
+#### 敏感信息泄露 
+
+- phpinfo()
+  - 确切的 PHP版本
+  - 操作系统和它的版本
+  - PHP 详细配置
+  - IP 地址信息
+  - 服务器的环境变量
+  - PHP 扩展及其配置 
+  - ![1618973910897](HackerMeWeb.assets/1618973910897.png)
+- 容器版本 
+  - SERVER_SOFTWARE   Apache/2.4.7 (Ubuntu) 
+  - 配合 Apache 这个版本的 CVE 漏洞，获取 shell。
+-  网站根目录 
+  - DOCUMENT_ROOT 	/var/www/html
+  - 网站根目录，配合 SQL 注入漏洞，如 SQLMap 的-os-shell，直接获取 shell。 
+- 本地（远程）文件包含 
+  - allow_url_fopen		On
+  - allow_url_include	Off
+  - allow_url_fopen 默认开启，关闭会导致应用程序故障，
+  - allow_url_include 默认关闭，如果打开，易出现远程文件包含漏洞。 
+  - ![1618974272609](HackerMeWeb.assets/1618974272609.png)
+- 真实 IP 泄露 
+  - SERVER_ADDR 	172.17.0.2
+  - 直接绕过 CDN，得到真实 IP，后续可继续查旁站 IP 和 C 段。 
+- 禁用的方法
+  - disable_functions	pcntl_alarm,pcntl_fork ..... .....
+  - 在构造木马 webshell 的过程，需要知道哪些方法是被禁用了的，有针对的过滤。 
+- 限定访问位置
+  - open_basedir	no value
+  - PHP 能够访问的目录是否有限制。 
+- 短标签的使用
+  - short_open_tag	Off
+  - <?php ?>是 PHP 程序标准形式，打开此开关，将允许<? ?>，在构造 shell 过程中有帮助。 
+- 缓存
+  - opcache.enable	On	On
+  - 缓存 PHP 文件，文件类型为 ~.bin,配合文件上传（一般不过滤 bin）覆盖，再调用达到加载恶意文件的目的。 
+- Phar 的利用
+  - ![1618974749232](HackerMeWeb.assets/1618974749232.png)
+  - 使用 Phar://伪协议流可以 Bypass 一些上传的 waf，大多数情况下和文件包含一起使用，同时关联,一些反序列化漏洞。 
+- 支持的程序
+  - 服务器是否加载了 Redis、Memcache、MongoDB、MySQL、cURL，还有 Gopher。 
 
 
 
+#### 远程文件包含漏洞
+
+- 在没干信息泄露中，allow_url_fopen	allow_url_include
+  - ![1618974272609](HackerMeWeb.assets/1618974272609.png)
+  - 程序开发人员一般会把重复使用的函数写到单个文件中，需要使用某个函数时直接调用此文件，而无需再次编写，这其中文件调用的过程一般被称为文件包含。
+  - 程序开发人员一般希望代码更灵活，所以被包含的文件设置为变量，用来进行动态调用，但正是由于这种灵活性，从而导致客户端可以调用一个恶意文件，造成文件包含漏洞。
+  - 几乎所有脚本语言都会提供文件包含的功能，但文件包含漏洞在PHP中巨多，其他语言编写的程序相对较少。
+- 谜团靶场平台测试
+  - 进行高安全级别文件上传漏洞的利用
+  - 打开谜团网站，https://mituan.zone/，登录，搜索 bwapp 靶场，创建，打开
+  - 弹出新 Tab 页面，http://beefe2e5c78544c8a030c00f8197be5c.app.mituan.zone/login.php
+  - 初始化数据库，http://beefe2e5c78544c8a030c00f8197be5c.app.mituan.zone/install.php
+  - 创建新用户，登录用户
+  - 选择bug 类型，Unrestricted File Upload，等级 **high**
+    - 创建 test.jpg 文件
+      - 示例程序：HackerMeCode\PHP\test.jpg
+    - 上传文件，并在打开，http://beefe2e5c78544c8a030c00f8197be5c.app.mituan.zone/images/test.jpg
+  - 选择新的bug类型，Remote & Local File Inclusion (RFI/LFI)，等级 low
+    - 网址，http://beefe2e5c78544c8a030c00f8197be5c.app.mituan.zone/rlfi.php?language=lang_en.php&action=go
+    - 使用 百度测试，http://beefe2e5c78544c8a030c00f8197be5c.app.mituan.zone/rlfi.php?language=http://www.baidu.com&action=go
+      - 页面内嵌 百度首页 的页面
+    - 使用  test.jpg 测试，http://beefe2e5c78544c8a030c00f8197be5c.app.mituan.zone/rlfi.php?language=http://beefe2e5c78544c8a030c00f8197be5c.app.mituan.zone/images/test.jpg&action=go
+      - 页面输出 123
+    - 备注：可以更换为新的文件 HackerMeCode\PHP\test2.jpg 进行测试，可以看到完整的 phpinfo
 
 
 
-
+#### 魔术方法 
 
 
 
