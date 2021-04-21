@@ -6651,57 +6651,120 @@ if ($data['flag'] !== true) {
 
 #### 代码审计 
 
+软件代码审计是对编程项目中的源代码进行的全面分析，主要目的是发现错误，安全漏洞或违反编程约定的情况。 它是防御性编程的组成部分，旨在软件发布前尽可能减少错误。 
+
+
+
+#### 代码审计方式
+
+审计之前，创建一个核心问题清单，包括安全漏洞，身份验证问题，授权问题，内存泄漏和不良设计习惯之类的问题。
+
+跟踪用户输入数据和敏感函数参数回溯，最为常用。 
 
 
 
 
 
+#### 审计要点 
+
+##### 目录结构 
+
+![1619001679073](HackerMeWeb.assets/1619001679073.png)
+
+![1619001713326](HackerMeWeb.assets/1619001713326.png)
 
 
 
+##### 密码硬编码
+
+出现位置：
+1. properties 后缀文件
+2. java 后缀文件
+3. xml 后缀文件 
+
+![1619001775494](HackerMeWeb.assets/1619001775494.png)
 
 
 
+##### 明文存储 
+
+关键词：
+1. password
+2. pass
+3. jdbc
+4. username
+5. 其他第三方软件（Redis） 
+
+![1619001798927](HackerMeWeb.assets/1619001798927.png)
 
 
 
+##### 命令注入 
+
+关键词：
+1. getRuntime
+2. exec
+3. ProcessBuilder
+4. shell 
+
+![1619009416090](HackerMeWeb.assets/1619009416090.png)
 
 
 
+##### 文件上传 
+
+关键词：
+1. upload
+2. MultipartFile
+3. fileName
+4. filePath 
+
+![1619009475751](HackerMeWeb.assets/1619009475751.png)
 
 
 
+##### 越权，URL 跳转 
+
+关键词：
+1. sendRedirect
+2. setHeader
+3. forward 
+
+![1619009526951](HackerMeWeb.assets/1619009526951.png)
 
 
 
+##### sql 注入
+
+Select、Dao 、from 、delete 、update、insert 、 createStatement
 
 
 
+##### 反序列化
+
+readObject 、 readUnshared 、JSON.parseObject
 
 
 
+#####  XSS
+
+getParamter、 param
 
 
 
+##### XML 注入 
+
+ XMLStreamReader 、 SAXReader 、XMLReader 等 
 
 
 
+#### Fortify
+
+Fortify SCA 是一款静态应用程序安全性测试 （SAST）产品，可供开发团队和安全专家分析源代码，检测安全漏洞，帮助开发人员更快更轻松地识别问题并排定问题优先级，然后加以解决。 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+### Node.js 安全 
 
 
 
