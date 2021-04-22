@@ -6879,59 +6879,169 @@ Node.js 是一个开源的、跨平台的运行时环境，有了它，开发人
 
 
 
+#### Node.js 面临的问题
+
+代码执行，命令执行，XSS，SQL 注入，SSRF，文件上传，
+
+nodejs 对一些经典 web 漏洞，有一定的防护，有的漏洞在其他语言中不明显，但在 nodejs 中比较突出。
+
+require 链劫持（软件投毒）,正则表达式拒绝服务，不安全的包。 
 
 
 
+#### 安全开发准则
+
+- 不使用废弃的包或者版本。
+  - ![1619074215179](HackerMeWeb.assets/1619074215179.png)
+- 检测使用的包的安全问题。
+  - NSP
+  - Snyk
+  - npm audit 
+  - ![1619074252006](HackerMeWeb.assets/1619074252006.png)
+- 使用严格模式。
+- 使用类似 Helmet 的模块。
+  - Helmet 包含11个小的中间件，通过设置不同的 HTTP 头来保障 App 的安全。如 XSS，Clickjacking。 
+  - ![1619074336349](HackerMeWeb.assets/1619074336349.png)
+- 谨慎使用 cookie。
+- 验证用户输入。
+- 避免使用 eval 函数。
+  - eval 函数允许执行以字符串形式传递的 Javascript 代码。不直接执行用户输入，与此函数功能相似的函数如下所示： 
+    - setTimeout()
+    - setInterval()
+    - new Function 
+- 确保正则安全。
+  - 不安全的正则表达式消耗大量的计算资源，被攻击者利用会造成正则表达式拒绝服务攻击。思考如下字符串与正则 。
+    - aaaaX （a+）+X
+      - (a)(a)(a)(a)X
+      - (a)(a)(aa)X
+      - (a)(aa)(a)X
+      - (a)(aaa)X
+      - (aa)(aa)X
+      - (aaa)(a)X
+      - (aaaa)X 
+    - 尽可能使用成熟的验证库，推荐库 ，joi，express-validator，validator 
+  - 正则表达式引擎分成两类：一类称为 DFA （确定性有限状态自动机），另一类称为 NFA（非确定性有限状态自动机）。
+- 正确处理报错。 
+  - 在生产环境，要处理好错误，避免将错误堆栈信息等敏感信息输出给外部用户。 
+  - ![1619075902703](HackerMeWeb.assets/1619075902703.png)
 
 
 
+#### Node.js 漏洞审计要点
+
+- SQL 注入（OWASP 1）
+- 失效的身份认证与会话管理（OWASP 2）
+- XSS（OWASP 7）
+- 不安全的对象直接引用
+- 安全配置错误（OWASP 6） 
+- 敏感信息泄露（OWASP 3）
+- 缺少访问控制（OWASP 5）
+- 完整的日志记录（OWASP 10）
+- 使用有漏洞的组件（OWASP 9）
+- 未经验证的重定向和转发 
 
 
 
+#### Node.js 漏洞审计操作
+
+##### 项目结构 
+
+- HTTP Request 流程
+- 项目目录结构
+
+![1619076659181](HackerMeWeb.assets/1619076659181.png)
+
+![1619076716368](HackerMeWeb.assets/1619076716368.png)
 
 
 
+##### 审计依赖 
+
+- npm 具有强大的包管理系统，管理着庞大的开源包，但也面临着下面一些问题:
+  - 1.安全问题
+  - 2.失去维护/废弃/过期
+- nsp 是检测包依赖的工具，被收购后，在 npm>=6.0.0，使用如下指令：
+  - npm audit
+    - 展示审计的结果
+  - npm audit fix 
+    - 展示审计的结果并修复
 
 
 
+##### 不安全的对象直接引用 
+
+```javascript
+function isAdmin(req, res, next) {
+    if (req.use.role == 'admin') {  // 检验账号的用户是否是 admin
+        return next();
+    }
+    
+    // 如果不是，报错丢出
+    res.redirect('/403');
+}
+
+app.get('/admin', isAdmin, function(req, res)) {
+    res.send('secret');
+}
+```
 
 
 
+##### 敏感信息泄露 
+
+- 在应用报错的时候，在内部进行日志记录，返回给用户的只是出错了的信息，不返回具体报错信息。
+
+![1619077325573](HackerMeWeb.assets/1619077325573.png)
 
 
 
+##### 完整的日志记录 
+
+- 所有用户/系统操作被记录。
+- 敏感信息（密码等）不被记录。
+- 不寻常的活动（多次尝试登录）被记录。
+- 日志记录足够详细到用于审计的复现。
+- 生产&开发日志记录分级。 
 
 
 
+##### 未经验证的重定向和转发
+
+- SSRF
+  - www.target.com/?url=http://127.0.0.1:28017 
+  - ![1619077459184](HackerMeWeb.assets/1619077459184.png)
 
 
 
+##### SQL注入 
+
+- 用户输入过滤。
+- SQL 参数是否拼接。
+- 采用的 ORM 是否爆出漏洞?
+- 错误是否输出给用户。 
 
 
 
+##### XSS 
+
+- 用户输入能否控制输出。 
+
+![1619077553509](HackerMeWeb.assets/1619077553509.png)
 
 
 
+##### 安全配置 
+
+- Helmet() 
+  - Strict-Transport-Security 强制实施与服务器的安全（HTTP over SSL / TLS）连接
+  - X-Frame-Options 提供点击劫持保护
+  - X-XSS-Protection 支持在最新的Web浏览器中内置的跨站点脚本（XSS）过滤器
+  - X-Content-Type-Options 可防止浏览器从声明的内容类型中嗅探响应
+  - Content-Security-Policy 可防止各种攻击，包括跨站点脚本和其他跨站点注入 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+## Web 安全运营
 
 
 
