@@ -1,4 +1,4 @@
-# Hacker Me Web
+#  Hacker Me Web
 
 ## Web 安全基础
 
@@ -6766,33 +6766,116 @@ Fortify SCA 是一款静态应用程序安全性测试 （SAST）产品，可供
 
 ### Node.js 安全 
 
+#### Node.js
+
+Node.js 是一个开源的、跨平台的运行时环境，有了它，开发人员可以使用 JavaScript 创建各种服务器端工具和应用程序。
+
+此应用可以应用与浏览器上下文之外（即可以直接运行于计算机或服务器操作系统上）。 
 
 
 
+#### Express
+
+- 是最流行的 Node 框架，是许多其他流行 Node 框架的底层库
+- 虽然 Express 本身是极简风格的，但是开发人员通过创建各类兼容的中间件包，解决了几乎所有的 Web 开发问题
+- 这些库可以实现 cookie，会话，用户登录，URL参数，post数据，安全头等功能
+- 为不同 URL 路径中使用不同 HTTP 动词的请求（路由）编写处理程序。
+- 集成了“视图”渲染引擎，以便通过将数据插入模板来生成响应。
+- 设置常见 Web 应用设置，比如用于连接的端口，以及渲染响应模板的位置。
+- 在请求处理管道的任何位置添加额外的请求处理“中间件”。 
 
 
 
+#### Node 测试
+
+- node 官网：https://nodejs.org/en/
+- 下载安装，npm -v，查看安装版本
+- 创建 hello.js，示例程序：HackerMeCode\Nodejs\hello.js
+- 命令行输入，node hello.js
+- 浏览器访问：http://127.0.0.1/
+  - 可以看到浏览器展示：hello world
 
 
 
+#### Express 测试
+
+- 安装 Express ，新建一个文件夹 Nodejs ，进入其中，启动命令行，输入：npm install express
+  - 然后就可以安装好 express
+- 创建 app.js 测试文件，示例程序：HackerMeCode\Nodejs\app.js
+- 命令行输入，node app.js
+- 浏览器访问：http://127.0.0.1/hello
+  - 可以看到浏览器展示：Hello friends!
 
 
 
+#### 路由模块 
+
+- 创建 download.js 测试文件，示例程序：HackerMeCode\Nodejs\download.js
+- 创建 main.js 测试文件，示例程序：HackerMeCode\Nodejs\main.js
+- 命令行输入，node main.js
+- 浏览器访问：
+  - http://127.0.0.1/
+  - http://127.0.0.1/news
+  - http://127.0.0.1/download
+  - http://127.0.0.1/download/docs
+  - 可以看到浏览器展示的不同结果
+- app.use 表示对所有路由，和所有方法都调用中间函数
+- app.get('/') 表示对get 方法，/ 开头的 URL 调用中间函数
+- app.use('/download') 表示对  /download 开头的所有路由，调用中间函数
 
 
 
+#### 中间件
+
+- 安装 日志模块中间件
+  - npm install morgan
+- 中间件和路由函数是按声明顺序调用的。 
+- 中间件在 Express 应用中得到了广泛使用
+- 大多数应用会使用第三方中间件来简化常见的 web 开发任务，比如 cookie，会话，用户身份验证，访问请求 POST和JSON数据，日志记录，压缩HTTP响应等。
+- 一些中间件的引入顺序很重要（例如，如果会话中间件依赖于 cookie 中间件，则必须先添加 cookie 处理器）
+- 绝大多数情况下要先调用中间件，后设置路由，否则路由处理器将无法访问中间件的功能
+- morgan 是一个日志记录的中间件
+- 创建 main-morgan.js 测试文件，示例程序：HackerMeCode\Nodejs\main-morgan.js
+  - 命令行输入，node main-morgan.js
+  - 浏览器访问：
+    - http://127.0.0.1/
+    - 可以看到会有对应的请求日志信息
+- 创建 main-morgan-mid.js 测试文件，示例程序：HackerMeCode\Nodejs\main-morgan-mid.js
+  - 命令行输入，node main-morgan-mid.js
+  - 浏览器访问：
+    - http://127.0.0.1/
+    - 可以看到会有对应的请求日志信息，并且每一个请求都会打印 mid function!
 
 
 
+#### 静态资源
+
+- 创建 main-morgan-static.js 测试文件，示例程序：HackerMeCode\Nodejs\main-morgan-static.js
+- 创建文件： HackerMeCode\Nodejs\public\js\selfjs.js
+  - 命令行输入，node main-morgan-static.js
+  - 浏览器访问：
+    - http://127.0.0.1/
+      - 表示 App 工作
+    - http://127.0.0.1/js/selfjs.js
+      - 可以看到 selfjs.js 文件中的内容，虽然 selfjs.js 文件在 public 文件夹下面放置，但是访问的路径并没有 public
 
 
 
+#### 渲染（view,视图） 
 
-
-
-
-
-
+- PUG 模版引擎 
+  - Pug 是一款健壮、灵活、功能丰富的 HTML 模板引擎,专门为 Node.js 平台开发。Pug 是由 Jade 改名而来。
+  - Pug 通过缩进（表示标签间的嵌套关系）的方式来编写代码的过程，在编译的过程中，不需要考虑标签是否闭合的问题。 
+  - Express 支持多个版本的模板引擎，如 Jade(pug)、Mustache、Dust 与其它。 
+- pug 安装
+  - npm install pug
+- pug  测试
+  - 创建 main-pug.js 测试文件，示例程序：HackerMeCode\Nodejs\main-pug.js
+  - 创建文件： HackerMeCode\Nodejs\views\index.pug
+    - 命令行输入，node main-pug.js
+    - 浏览器访问：
+      - http://127.0.0.1/
+      - 页面展示 h1 大小的 hello world pug engine!
 
 
 
