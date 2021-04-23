@@ -4966,6 +4966,14 @@ DOM 型 XSS 其实是一种特殊类型的反射型 XSS，通过 JS 操作 DOM �
 
 
 
+#### 编解码混淆练习
+
+- 示例程序：HackerMeCode\EncodeAndDecode\DecodePractice.html
+
+
+
+
+
 ### CSRF 
 
 #### HTTP
