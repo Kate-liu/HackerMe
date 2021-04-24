@@ -190,6 +190,9 @@
 - 熊猫烧香
   - 扫描的是 135 和 445 端口的弱密钥
   - Windows 中的 135、137 和 445端口
+- 冲击波蠕虫
+  - windows 操作系统 RPC 服务（运行在445端口）的蠕虫
+  - 网络运营商，在骨干网络上屏蔽了135，445等端口的连接请求
 - 永恒之蓝
   - 利用的 SMB 漏洞
 - 中国的防火长城（Great Firewall）
@@ -213,6 +216,8 @@
 - WAF（Web 应用程序防火墙）
   - Web Application Firewall
   - 只专注于 Web 安全的防御，Web 安全关注于应用层的HTTP 请求
+- ACL技术
+  - ACL技术在路由器中被广泛采用，它是一种基于包过滤的流控制技术。
 - IDS（Intrusion DetectionSystem，入侵检测系统）
   - IDS 的最终目的是检测黑客的攻击行为
   - NIDS（Network IntrusionDetection System，网络入侵检测系统）
@@ -265,6 +270,13 @@
   - 目前的 DLP 产品，更多的是关注员工个人设备中的数据流动
   - 服务器的数据流动太大，监控成本也过高
   - 公司在部署了 DLP 产品之后，会强制员工在电脑上安装一个 DLP 的终端
+- Pwn2Own
+  - 世界黑客大赛,https://www.zerodayinitiative.com/blog?tag=Pwn2Own
+  - https://baike.sogou.com/v10752672.htm?fromTitle=pwn2own
+  - https://mp.weixin.qq.com/s?src=11&timestamp=1619241816&ver=3027&signature=*f2EdS5eGGNhbuHoe4c*8tVn9ETouC5pWOn-n6mLE9ImFjGsbb2Rulqdsti6PDFz2zfOph8qXW9zPPZ42xqpQm1xlzIf9kICN3Vvfh3Ag43ODv9VdaD-13kR2oZBL5Iq&new=1
+  - **https://www.youtube.com/watch?v=dA3aIMgRFY8**
+  - **https://www.youtube.com/watch?v=smav9ljrgSE**
+  - **https://www.youtube.com/watch?v=6FYfUv1pwAg**
 
 
 
