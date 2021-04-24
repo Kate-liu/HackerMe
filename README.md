@@ -46,7 +46,7 @@ This is a Hacker Record，I hope to help you grown up!
 
 ## Knowledge Tools
 
-- [BrowserTools](Tools/BrowserTools.md)
+- [BrowserTools](https://github.com/Kate-liu/BrowserTools)
 - [GoogleV8Tools](Tools/GoogleV8Tools.md)
 - [CryptographyTools](Tools/CryptographyTools.md)
 - [OAuth2.0Tools](Tools/OAuth2.0Tools.md)
